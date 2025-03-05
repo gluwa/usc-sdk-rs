@@ -13,7 +13,7 @@ async function main() {
 
     
     const packedAbi = packedAbiEncode(transaction, receipt);
-    console.log(packedAbi);
+    console.log(JSON.stringify(packedAbi));
 }
 
 main()
