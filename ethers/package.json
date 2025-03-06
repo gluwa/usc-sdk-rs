@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "ethers": "5.7"
+    "ethers": "6.13.5"
   },
   "author": "Gluwa Inc.",
   "license": "MIT"

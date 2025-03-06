@@ -1,44 +1,57 @@
-import { ethers } from "ethers";
+import { Log, TransactionReceipt, TransactionResponse, solidityPacked, AccessList } from "ethers";
 
 interface EncodedFields {
     types: string[];
     values: any[];
 }
 
-function getFieldsForType0(tx: ethers.providers.TransactionResponse): EncodedFields {
+function getFieldsForType0(tx: TransactionResponse): EncodedFields {
     return {
         types: [
             "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, tx.v, tx.r, tx.s
+            tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
 }
 
-function getFieldsForType1(tx: ethers.providers.TransactionResponse): EncodedFields {
+function getFieldsForType1(tx: TransactionResponse): EncodedFields {
     return {
         types: [
             "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.v, tx.r, tx.s
+            tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
 }
 
-function getFieldsForType2(tx: ethers.providers.TransactionResponse): EncodedFields {
+function getFieldsForType2(tx: TransactionResponse): EncodedFields {
     return {
         types: [
             "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.v, tx.r, tx.s
+            tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
 }
 
-function getFieldsForType(tx: ethers.providers.TransactionResponse): EncodedFields {
+function getFieldsForType3(tx: TransactionResponse): EncodedFields {
+  const out = {
+    types: [
+      "uint256", "uint256", "uint256", "uint256", "uint256", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint256", "bytes32", "bytes32"
+    ],
+    values: [
+      tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.v, tx.signature.r, tx.signature.s
+    ]
+  };
+
+  return out;
+}
+
+function getFieldsForType(tx: TransactionResponse): EncodedFields {
     switch (tx.type) {
         case 0:
             return getFieldsForType0(tx);
@@ -46,17 +59,19 @@ function getFieldsForType(tx: ethers.providers.TransactionResponse): EncodedFiel
             return getFieldsForType1(tx);
         case 2:
             return getFieldsForType2(tx);
+        case 3:
+            return getFieldsForType2(tx);
         default:
             throw new Error("Unsupported transaction type");
     }
 }
 
 function encodeAccessListItem(item: { address: string, storageKeys: string[] }) {
-    const accessListEncoded = ethers.utils.solidityPack(["address", "uint256[]"], [item.address,item.storageKeys]);
+    const accessListEncoded = solidityPacked(["address", "uint256[]"], [item.address,item.storageKeys]);
     return accessListEncoded;
 }
 
-function encodeAccessList(accessList: ethers.utils.AccessList | undefined): string[] {
+function encodeAccessList(accessList: AccessList | null): string[] {
 
     if (!accessList)
         return [];
@@ -65,7 +80,7 @@ function encodeAccessList(accessList: ethers.utils.AccessList | undefined): stri
     return result;
 }
 
-function getReceiptFields(rx: ethers.providers.TransactionReceipt): EncodedFields {
+function getReceiptFields(rx: TransactionReceipt): EncodedFields {
     return {
         types: [
             "uint256", "uint256", "bytes[]", "bytes"
@@ -76,9 +91,9 @@ function getReceiptFields(rx: ethers.providers.TransactionReceipt): EncodedField
     };
 }
 
-function encodeLog(log: ethers.providers.Log): string {
+function encodeLog(log: Log): string {
 
-    const result = ethers.utils.solidityPack(
+    const result = solidityPacked(
         ["address", "bytes[]", "bytes"],
         [log.address, log.topics, log.data]
     )
@@ -86,13 +101,13 @@ function encodeLog(log: ethers.providers.Log): string {
     return result;
 }
 
-function abiEncode(tx: ethers.providers.TransactionResponse, rx: ethers.providers.TransactionReceipt) {
+function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
     const txFields = getFieldsForType(tx);
     const receiptFields = getReceiptFields(rx);
     const allFieldTypes = [...txFields.types, ...receiptFields.types];
     const allFieldValues = [...txFields.values, ...receiptFields.values];
 
-    const abi = ethers.utils.solidityPack(allFieldTypes, allFieldValues);
+    const abi = solidityPacked(allFieldTypes, allFieldValues);
 
     return {
         types: allFieldTypes,
