@@ -5,8 +5,30 @@ interface EncodedFields {
     values: any[];
 }
 
+const SEPARATOR = 0; // uint8 zero separator
+
+function insertSeparator(fields: EncodedFields): EncodedFields {
+    const newTypes: string[] = [];
+    const newValues: any[] = [];
+
+    for (let i = 0; i < fields.types.length; i++) {
+        // Add the original type
+        newTypes.push(fields.types[i]);
+        newValues.push(fields.values[i]);
+
+        // Add separator unless it's the last element
+        if (i < fields.types.length - 1) {
+            newTypes.push("uint8"); // Separator type
+            newValues.push(SEPARATOR); // uint8(0) as separator
+        }
+    }
+
+    return { types: newTypes, values: newValues };
+}
+
+
 function getFieldsForType0(tx: TransactionResponse): EncodedFields {
-    return {
+    const out = {
         types: [
             "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
@@ -14,10 +36,12 @@ function getFieldsForType0(tx: TransactionResponse): EncodedFields {
             tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
+    const safe = insertSeparator(out);
+    return safe;
 }
 
 function getFieldsForType1(tx: TransactionResponse): EncodedFields {
-    return {
+    const out = {
         types: [
             "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
@@ -25,10 +49,12 @@ function getFieldsForType1(tx: TransactionResponse): EncodedFields {
             tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
+    const safe = insertSeparator(out);
+    return safe;
 }
 
 function getFieldsForType2(tx: TransactionResponse): EncodedFields {
-    return {
+    const out = {
         types: [
             "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
@@ -36,6 +62,8 @@ function getFieldsForType2(tx: TransactionResponse): EncodedFields {
             tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
+    const safe = insertSeparator(out);
+    return safe;
 }
 
 function getFieldsForType3(tx: TransactionResponse): EncodedFields {
@@ -48,7 +76,8 @@ function getFieldsForType3(tx: TransactionResponse): EncodedFields {
     ]
   };
 
-  return out;
+  const safe = insertSeparator(out);
+  return safe;
 }
 
 function getFieldsForType(tx: TransactionResponse): EncodedFields {
@@ -67,7 +96,14 @@ function getFieldsForType(tx: TransactionResponse): EncodedFields {
 }
 
 function encodeAccessListItem(item: { address: string, storageKeys: string[] }) {
-    const accessListEncoded = solidityPacked(["address", "uint256[]"], [item.address,item.storageKeys]);
+
+    const fields: EncodedFields = {
+        types: ["address", "uint256[]"],
+        values: [item.address,item.storageKeys]
+    };
+
+    const safe = insertSeparator(fields);
+    const accessListEncoded = solidityPacked(safe.types, safe.values);
     return accessListEncoded;
 }
 
@@ -81,7 +117,7 @@ function encodeAccessList(accessList: AccessList | null): string[] {
 }
 
 function getReceiptFields(rx: TransactionReceipt): EncodedFields {
-    return {
+    const fields = {
         types: [
             "uint256", "uint256", "bytes[]", "bytes"
         ],
@@ -89,15 +125,20 @@ function getReceiptFields(rx: TransactionReceipt): EncodedFields {
             rx.status, rx.gasUsed, rx.logs.map(encodeLog), rx.logsBloom
         ]
     };
+
+    const safe = insertSeparator(fields);
+    return safe;
 }
 
 function encodeLog(log: Log): string {
 
-    const result = solidityPacked(
-        ["address", "bytes[]", "bytes"],
-        [log.address, log.topics, log.data]
-    )
+    const logFields: EncodedFields = {
+        types:  ["address", "bytes[]", "bytes"],
+        values: [log.address, log.topics, log.data]
+    }
 
+    const safe = insertSeparator(logFields);
+    const result = solidityPacked(safe.types, safe.values);
     return result;
 }
 

@@ -1,6 +1,7 @@
 import { JsonRpcProvider } from "ethers";
 import { abiEncode } from "./encodings/abi";
 import { abiEncode as packedAbiEncode } from "./encodings/packed-abi";
+import { abiEncode as packedAbiEncodeWithSeparator } from "./encodings/packed-abi-seperated";
 
 async function main() {
     const rpc = "https://sepolia-proxy-rpc.creditcoin.network";
@@ -20,6 +21,9 @@ async function main() {
 
     const packedAbi = packedAbiEncode(transaction!, receipt!);
     console.log(JSON.stringify(packedAbi));
+
+    const packedAbiWithSeperator = packedAbiEncodeWithSeparator(transaction!, receipt!);
+    console.log(JSON.stringify(packedAbiWithSeperator));
 }
 
 main()
