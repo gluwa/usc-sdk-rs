@@ -24,6 +24,9 @@ async function singleTransactionEncoding(transactionHash: string) {
 }
 
 async function loadBlockAndEncode(blockNumber: bigint) {
+
+    const start = performance.now()
+
     const block = await provider.getBlock(blockNumber, true);
     if (!block) 
         throw new Error(`no block found with block number ${blockNumber}`);
@@ -34,8 +37,6 @@ async function loadBlockAndEncode(blockNumber: bigint) {
     const transactions = block.prefetchedTransactions;
     const receipts = await getBlockReceipts(provider, block.hash); 
     let encodedTransactions = [];
-
-    const start = performance.now()
 
     for(let i = 0; i < transactions.length; i++) {
         const tx = transactions[i];
