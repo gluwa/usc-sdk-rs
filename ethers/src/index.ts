@@ -2,17 +2,14 @@ import { JsonRpcProvider } from "ethers";
 import { abiEncode } from "./encodings/abi";
 import { abiEncode as packedAbiEncode } from "./encodings/packed-abi";
 import { abiEncode as packedAbiEncodeWithSeparator } from "./encodings/packed-abi-seperated";
+import { getBlockReceipts } from "./utils/block-receipt";
+import { writeFileSync } from 'fs';
 
-async function main() {
-    const rpc = "https://sepolia-proxy-rpc.creditcoin.network";
-    //const transactionHash = "0xe3de4394fc39316c737abe75768a0050d69cb610956434d7cd7d8bb0fa7d5b90";
-    const transactionHash = "0xcdfb24b6f13f867c1f38d7263eb6f66b865a2e44203b52b068b2998df81200b1"; // blob transaction.
-    const provider = new JsonRpcProvider(rpc);
+const rpc = "https://sepolia-proxy-rpc.creditcoin.network";
+const provider = new JsonRpcProvider(rpc);
 
-    // provider.on('debug', a => {
-    //     console.log(a);
-    // });
-
+async function singleTransactionEncoding(transactionHash: string) {
+    //const transactionHash = "0xcdfb24b6f13f867c1f38d7263eb6f66b865a2e44203b52b068b2998df81200b1";
     const transaction = await provider.getTransaction(transactionHash);
     const receipt = await provider.getTransactionReceipt(transactionHash);
 
@@ -24,6 +21,61 @@ async function main() {
 
     const packedAbiWithSeperator = packedAbiEncodeWithSeparator(transaction!, receipt!);
     console.log(JSON.stringify(packedAbiWithSeperator));
+}
+
+async function loadBlockAndEncode(blockNumber: bigint) {
+    const block = await provider.getBlock(blockNumber, true);
+    if (!block) 
+        throw new Error(`no block found with block number ${blockNumber}`);
+
+    if (!block.hash)
+        throw new Error('block has no hash.');
+
+    const transactions = block.prefetchedTransactions;
+    const receipts = await getBlockReceipts(provider, block.hash); 
+    let encodedTransactions = [];
+
+    for(let i = 0; i < transactions.length; i++) {
+        const tx = transactions[i];
+        const rx = receipts[i];
+        let encodedAbi;
+        try {
+            encodedAbi = abiEncode(tx, rx);
+        }
+        catch(er) {
+            console.log('failed to encoide', tx.hash);
+            throw er;
+        }
+    
+        const packedAbiEncoded = packedAbiEncode(tx, rx);
+        const packedAbiEncodedWithSeparator = packedAbiEncodeWithSeparator(tx, rx);
+
+
+        encodedTransactions.push({
+            transactionIndex: i,
+            abi: encodedAbi,
+            packedAbiEncode: packedAbiEncoded,
+            packedAbiEncodedWithSeparator: packedAbiEncodedWithSeparator
+        });
+    }
+
+    const blockAbiFile = encodedTransactions.map(t => t.abi.abi);
+    const packedBlockAbiFile = encodedTransactions.map(t => t.packedAbiEncode.abi);
+    const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.packedAbiEncodedWithSeparator.abi);
+    writeToFile("../ignore/ethers-out/block.json", blockAbiFile);
+    writeToFile("../ignore/ethers-out/packed-block.json", packedBlockAbiFile);
+    writeToFile("../ignore/ethers-out/packed-safe-block.json", packedBlockAbiWithSeparatorFile);
+}
+
+function writeToFile(file: string, data: any) {
+    writeFileSync(file, JSON.stringify(data), {
+        encoding: 'utf-8'
+    });
+}
+
+async function main() {
+    await loadBlockAndEncode(BigInt(7846292));
+    //await singleTransactionEncoding("0xe4e2d78020e382f20e68445b624e17182b98f47c612a6587adf634e6195e2f65");
 }
 
 main()

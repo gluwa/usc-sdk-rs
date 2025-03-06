@@ -1,4 +1,5 @@
 import { Log, TransactionReceipt, TransactionResponse, solidityPacked, AccessList } from "ethers";
+import { addressOrZero } from "./utils";
 
 interface EncodedFields {
     types: string[];
@@ -33,7 +34,7 @@ function getFieldsForType0(tx: TransactionResponse): EncodedFields {
             "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+            tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
     const safe = insertSeparator(out);
@@ -46,7 +47,7 @@ function getFieldsForType1(tx: TransactionResponse): EncodedFields {
             "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
+            tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
     const safe = insertSeparator(out);
@@ -59,7 +60,7 @@ function getFieldsForType2(tx: TransactionResponse): EncodedFields {
             "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
+            tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
     const safe = insertSeparator(out);
@@ -69,10 +70,10 @@ function getFieldsForType2(tx: TransactionResponse): EncodedFields {
 function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   const out = {
     types: [
-      "uint256", "uint256", "uint256", "uint256", "uint256", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint256", "bytes32", "bytes32"
+      "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint256", "bytes32", "bytes32"
     ],
     values: [
-      tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.to, tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.v, tx.signature.r, tx.signature.s
+      tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.v, tx.signature.r, tx.signature.s
     ]
   };
 
@@ -98,7 +99,7 @@ function getFieldsForType(tx: TransactionResponse): EncodedFields {
 function encodeAccessListItem(item: { address: string, storageKeys: string[] }) {
 
     const fields: EncodedFields = {
-        types: ["address", "uint256[]"],
+        types: ["address", "bytes32[]"],
         values: [item.address,item.storageKeys]
     };
 
