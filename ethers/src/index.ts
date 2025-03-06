@@ -35,18 +35,14 @@ async function loadBlockAndEncode(blockNumber: bigint) {
     const receipts = await getBlockReceipts(provider, block.hash); 
     let encodedTransactions = [];
 
+    const start = performance.now()
+
     for(let i = 0; i < transactions.length; i++) {
         const tx = transactions[i];
         const rx = receipts[i];
-        let encodedAbi;
-        try {
-            encodedAbi = abiEncode(tx, rx);
-        }
-        catch(er) {
-            console.log('failed to encoide', tx.hash);
-            throw er;
-        }
-    
+        
+
+        const encodedAbi = abiEncode(tx, rx);
         const packedAbiEncoded = packedAbiEncode(tx, rx);
         const packedAbiEncodedWithSeparator = packedAbiEncodeWithSeparator(tx, rx);
 
@@ -59,6 +55,9 @@ async function loadBlockAndEncode(blockNumber: bigint) {
         });
     }
 
+    let end = performance.now();
+    console.log('time to execute abi encoding of all kinds', end-start);
+    
     const blockAbiFile = encodedTransactions.map(t => t.abi.abi);
     const packedBlockAbiFile = encodedTransactions.map(t => t.packedAbiEncode.abi);
     const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.packedAbiEncodedWithSeparator.abi);
