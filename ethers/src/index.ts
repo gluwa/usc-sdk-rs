@@ -60,10 +60,10 @@ async function loadBlockAndEncode(blockNumber: bigint) {
     console.log('time to execute abi encoding of all kinds', end - start);
 
     const blockAbiFile = encodedTransactions.map(t => t.abi.abi);
-    // const packedBlockAbiFile = encodedTransactions.map(t => t.solidityPacked.abi);
+    const packedBlockAbiFile = encodedTransactions.map(t => t.solidityPacked.abi);
     // const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.safeSolidityPacked.abi);
     writeToFile("../ignore/ethers-out/block.json", blockAbiFile);
-    // writeToFile("../ignore/ethers-out/solidity-packed-block.json", packedBlockAbiFile);
+    writeToFile("../ignore/ethers-out/solidity-packed-block.json", packedBlockAbiFile);
     // writeToFile("../ignore/ethers-out/safe-solidity-packed-block.json", packedBlockAbiWithSeparatorFile);
 }
 
@@ -82,7 +82,8 @@ async function main() {
     //let type_2 = "0xdfba59b94bac3da5af5d0fa8b81ae3199069fa6f38002be58c14e94a051e0642";
     //let legacy = "0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2";
     //let not_matching = "0xf09500718fa31ffb89bc0374b95f2b1f39047b2e3e01058984a9697e045a94b3";
-    //await singleTransactionEncoding(type_3);
+    // let not_matching2 = "0xb044ddc49d105964890f8e197c85f42d23737356015a07586a4f9237666526a8";
+    // await singleTransactionEncoding(not_matching2);
 }
 
 main()
