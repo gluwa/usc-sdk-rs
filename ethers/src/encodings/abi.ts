@@ -6,34 +6,15 @@ interface EncodedFields {
   values: any[] | any[][];
 }
 
-/*
-// revisit legacy encoding..
-    let types = vec![
-        DynSolType::Uint(8), 
-        DynSolType::Uint(64),
-        DynSolType::Uint(128),
-        DynSolType::Uint(64),
-        DynSolType::Address,
-        DynSolType::Address,
-        DynSolType::Uint(256),
-        DynSolType::Bytes,
-        DynSolType::Uint(256),
-        DynSolType::FixedBytes(32),
-        DynSolType::FixedBytes(32)
-    ];
-*/
 function getFieldsForType0(tx: TransactionResponse): EncodedFields {
-
-
-
   return {
     types: [
       "uint8", "uint64", "uint128", "uint64", "address", "address", 
-      "uint256", "bytes", "uint8", "bytes32", "bytes32"
+      "uint256", "bytes", "uint256", "bytes32", "bytes32"
     ],
     values: [
       tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), 
-      tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+      tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
     ]
   };
 }
@@ -41,10 +22,10 @@ function getFieldsForType0(tx: TransactionResponse): EncodedFields {
 function getFieldsForType1(tx: TransactionResponse): EncodedFields {
   return {
     types: [
-      "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+      "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
     ],
     values: [
-      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV, tx.signature.r, tx.signature.s
+      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList),tx.signature.yParity, tx.signature.r, tx.signature.s
     ]
   };
 }

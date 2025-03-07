@@ -48,7 +48,8 @@ pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -
 
     // Extract transaction fields
     let signature = signed_tx.signature();
-    let v = compute_v(signature, None);
+    let chain_id = tx.chain_id();
+    let v = compute_v(signature, chain_id);
 
     println!("0x{}", hex::encode(tx.input().to_vec()));
 
@@ -61,7 +62,7 @@ pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -
         DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)),         // To address
         DynSolValue::Uint(tx.value(), 256), // Value                           // Value
         DynSolValue::Bytes(tx.input().to_vec()), // Input data (true = dynamic encoding)
-        DynSolValue::Uint(U256::from(v), 8),                            // v (legacy is uint8)
+        DynSolValue::Uint(U256::from(v), 256),                          // v (legacy is uint8)
         DynSolValue::FixedBytes(B256::from(signature.r()), 32),         // r
         DynSolValue::FixedBytes(B256::from(signature.s()), 32)          // s
     ];
@@ -75,9 +76,12 @@ pub fn encode_transaction_type_1(
 ) -> Vec<DynSolValue> {
     // Extract transaction fields
     let signature = signed_tx.signature();
-    let v = compute_v(signature, tx.chain_id());
+    let y_parity: u8 = compute_y_parity(signature);
+    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
+
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(1), 8), // Transaction type 1
+        DynSolValue::Uint(U256::from(signed_tx.tx().chain_id), 64),
         DynSolValue::Uint(U256::from(signed_tx.tx().nonce), 64), // Nonce
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_price), 128), // Gas price
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit), 64), // Gas limit
@@ -85,7 +89,8 @@ pub fn encode_transaction_type_1(
         DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)), // To address
         DynSolValue::Uint(tx.value(), 256),  // Value
         DynSolValue::Bytes(tx.input().to_vec()), // Input data (true = dynamic encoding)
-        DynSolValue::Uint(U256::from(v), 256), // v contains chain id, so its u256
+        access_list,
+        DynSolValue::Uint(U256::from(y_parity), 8),     // y parity
         DynSolValue::FixedBytes(B256::from(signature.r()), 32), // r
         DynSolValue::FixedBytes(B256::from(signature.s()), 32), // s
     ];
