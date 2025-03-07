@@ -30,7 +30,7 @@ export function getFieldsForType2(tx: TransactionResponse): EncodedFields {
       "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
     ],
     values: [
-      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas ?? 0, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
     ]
   };
 }
@@ -38,10 +38,10 @@ export function getFieldsForType2(tx: TransactionResponse): EncodedFields {
 export function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   const out = {
     types: [
-      "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
+      "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint128", "bytes32[]", "uint8", "bytes32", "bytes32"
     ],
     values: [
-      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
+      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas ?? 0, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
     ]
   };
 

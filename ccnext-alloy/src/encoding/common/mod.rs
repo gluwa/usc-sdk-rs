@@ -71,7 +71,8 @@ pub fn encode_authorization_list(signed_authorizations: Vec<SignedAuthorization>
             DynSolValue::Uint(U256::from(signed_authorization.s()), 256)
         ]);
         
-        result.push(signed_authorization_tuple);
+        let pack_encoded = signed_authorization_tuple.abi_encode_packed();
+        result.push(DynSolValue::Bytes(pack_encoded));
     }
 
     DynSolValue::Array(result)

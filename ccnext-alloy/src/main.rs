@@ -21,7 +21,7 @@ async fn encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
     let _type_1 = "0x5c8c6d8c61bd8109ce02717db62b12554c097d156b66e30ff64864b5d4b1c041";
     let _not_matching= "0xf09500718fa31ffb89bc0374b95f2b1f39047b2e3e01058984a9697e045a94b3";
 
-    let tx_hash_str = _type_1;
+    let tx_hash_str = _type_4;
     let tx_hash = B256::from_str(tx_hash_str)?;
 
     let tx = provider
@@ -67,6 +67,7 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
 
                     // we have block and receipts now :)
                     let mut transaction_abis = Vec::new();
+                    let mut transaction_packed_abi = Vec::new();
 
                     let transactions = block.transactions.into_transactions_vec();
                     let transaction_and_receipts = transactions
@@ -75,16 +76,22 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
 
                     for (tx, rx) in  transaction_and_receipts{
                         let encoded = abi_encode(tx.clone(), rx.clone())?;
+                        let packed_encoded = encoding::solidity_pack::solidity_packed_encode(tx.clone(), rx.clone())?;
                         // transaction_abis.push(JsonAbiEncoded {
                         //     types: encoded.types,
                         //     abi: format!("0x{}", hex::encode(encoded.abi))
                         // });
                         transaction_abis.push(format!("0x{}", hex::encode(encoded.abi)).to_string());
+                        transaction_packed_abi.push(format!("0x{}", hex::encode(packed_encoded.abi).to_string()));
                     }
 
                     let json_string = serde_json::to_string_pretty(&transaction_abis)?;
                     let mut file = File::create("../ignore/alloy-out/block.json")?;
                     file.write_all(json_string.as_bytes())?;
+
+                    let json_string2 = serde_json::to_string_pretty(&transaction_packed_abi)?;
+                    let mut file = File::create("../ignore/alloy-out/solidity-packed-block.json")?;
+                    file.write_all(json_string2.as_bytes())?;
                 },
                 None => {
                     println!("Could not find receipts for block {:?}", block_number);
@@ -102,6 +109,6 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> 
 {
-    encode_transaction().await
-    //encode_block().await
+    //encode_transaction().await
+    encode_block().await
 }
