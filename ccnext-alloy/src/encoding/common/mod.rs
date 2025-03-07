@@ -1,8 +1,7 @@
-use alloy::dyn_abi::{DynSolType, DynSolValue};
-use alloy::dyn_abi::abi::Token;
+use alloy::dyn_abi::DynSolValue;
 use alloy::eips::eip7702::SignedAuthorization;
-use alloy::primitives::{FixedBytes, B256, U256};
-use alloy::rpc::types::{AccessListItem};
+use alloy::primitives::{FixedBytes, U256};
+use alloy::rpc::types::AccessListItem;
 use alloy::signers::Signature;
 use serde::{Deserialize, Serialize};
 
@@ -38,10 +37,13 @@ pub fn encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
         }
 
         // Create the `DynSolValue::Tuple` (address, storage_keys)
-        list.push(DynSolValue::Tuple(vec![
+        let access_list_tuple = DynSolValue::Tuple(vec![
             DynSolValue::Address(access_list_item.address),  // Address
             DynSolValue::Array(storage_keys)          
-        ]));
+        ]);
+
+        let access_list_as_bytes = access_list_tuple.abi_encode_packed();
+        list.push(DynSolValue::Bytes(access_list_as_bytes))
     }
 
     // Wrap into `DynSolValue::Array`

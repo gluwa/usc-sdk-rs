@@ -1,4 +1,3 @@
-
 use super::common::{
     compute_v, compute_y_parity, encode_access_list, encode_authorization_list, encode_blob_hashes,
     AbiEncodeResult,
@@ -30,20 +29,6 @@ function getFieldsForType0(tx: TransactionResponse): EncodedFields {
 }
 */
 pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
-    // keep this to use later.
-    // let types = vec![
-    //     DynSolType::Uint(8),
-    //     DynSolType::Uint(64),
-    //     DynSolType::Uint(128),
-    //     DynSolType::Uint(64),
-    //     DynSolType::Address,
-    //     DynSolType::Address,
-    //     DynSolType::Uint(256),
-    //     DynSolType::Bytes,
-    //     DynSolType::Uint(256),
-    //     DynSolType::FixedBytes(32),
-    //     DynSolType::FixedBytes(32)
-    // ];
 
     // Extract transaction fields
     let signature = signed_tx.signature();
@@ -251,31 +236,45 @@ pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
 
 fn encode_receipt(rx: TransactionReceipt) -> Vec<DynSolValue> {
 
+    // because packing has to be packed and cannot nest we change it to be uint8, uint64, bytes[], bytes
+
+    // so because we are packing here..
+    // we must first encode each receipt has an array of bytes[]
     let log_blooms = rx.inner.logs_bloom().0.to_vec();
     let result = vec![
+        
+        // uint8
         DynSolValue::Uint(U256::from(rx.status()), 8),
+
+        // uint64
         DynSolValue::Uint(U256::from(rx.gas_used), 64),
+
+        // bytes[]
         DynSolValue::Array(
-            rx.inner.logs().into_iter().map(|log| {
+            rx.inner.logs().into_iter().map(|log| { // this lambda, turns the log into a bytes
 
                 let topics = DynSolValue::Array(log.topics().into_iter().map(|topic| {
                     DynSolValue::FixedBytes(topic.clone(), 32)
                 }).collect());
 
-                DynSolValue::Tuple(vec![
+                let log_tuple = DynSolValue::Tuple(vec![
                     DynSolValue::Address(log.address()),
                     topics,
                     DynSolValue::Bytes(log.data().data.to_vec())
-                ])
+                ]);
+
+                DynSolValue::Bytes(log_tuple.abi_encode_packed())                
             }).collect()
         ),
+
+        // bytes
         DynSolValue::Bytes(log_blooms),
     ];
 
     result
 }
 
-pub fn abi_encode(
+pub fn solidity_packed_encode(
     tx: Transaction,
     rx: TransactionReceipt,
 ) -> Result<AbiEncodeResult, Box<dyn std::error::Error>> {
@@ -286,14 +285,7 @@ pub fn abi_encode(
     all_fields.extend(transaction_fields);
     all_fields.extend(receipt_fields);
     let tuple = DynSolValue::Tuple(all_fields.clone());
-    let final_bytes = match tuple.abi_encode_sequence() {
-        Some(final_bytes) => {
-            final_bytes
-        },
-        None => {
-            return Err(Box::new(EncodeError::Custom("Failed to encore sequence".into())));
-        }
-    };
+    let final_bytes = tuple.abi_encode_packed();
 
     let field_type: Vec<String> = all_fields.into_iter().map(|field| {
 

@@ -16,10 +16,10 @@ export function getFieldsForType0(tx: TransactionResponse): EncodedFields {
 export function getFieldsForType1(tx: TransactionResponse): EncodedFields {
     return {
         types: [
-            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
+            "uint8", "uint64", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+            tx.type, tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
         ]
     };
 }
