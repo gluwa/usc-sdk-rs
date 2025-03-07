@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>
     let rpc_url = "https://sepolia-proxy-rpc.creditcoin.network";
     let provider = ProviderBuilder::new().on_http(rpc_url.parse()?);
 
-    let tx_hash_str = "0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2"; //"0xe4e2d78020e382f20e68445b624e17182b98f47c612a6587adf634e6195e2f65";
+    let tx_hash_str = "0xdfba59b94bac3da5af5d0fa8b81ae3199069fa6f38002be58c14e94a051e0642"; //"0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2"; //"0xe4e2d78020e382f20e68445b624e17182b98f47c612a6587adf634e6195e2f65";
     let tx_hash = B256::from_str(tx_hash_str)?;
 
     let tx = provider
