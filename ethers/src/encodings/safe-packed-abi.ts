@@ -29,10 +29,10 @@ export function safeGetFieldsForType0(tx: TransactionResponse): EncodedFields {
 
     const out = {
         types: [
-            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+            "uint8", "uint64", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
+            tx.type, tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
 

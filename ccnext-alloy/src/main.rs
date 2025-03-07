@@ -22,10 +22,9 @@ async fn encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
     let legacy = "0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2";
     let type_4 = "0x2dce846c932bcf50a9dd180e61a09818009da734f2e6761cf9e825f19077f05a";
     let type_1 = "0x5c8c6d8c61bd8109ce02717db62b12554c097d156b66e30ff64864b5d4b1c041";
-
     let not_matching= "0xf09500718fa31ffb89bc0374b95f2b1f39047b2e3e01058984a9697e045a94b3";
 
-    let tx_hash_str = not_matching;
+    let tx_hash_str = type_1;
     let tx_hash = B256::from_str(tx_hash_str)?;
 
     let tx = provider
@@ -109,6 +108,6 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> 
 {
-    //encode_transaction().await
-    encode_block().await
+    encode_transaction().await
+    //encode_block().await
 }
