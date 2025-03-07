@@ -58,7 +58,8 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
     let rpc_url = "https://sepolia-proxy-rpc.creditcoin.network";
     let provider = ProviderBuilder::new().on_http(rpc_url.parse()?);
 
-    let block_number = BlockId::from(7846292);
+    //let block_number = BlockId::from(7846292);
+    let block_number = BlockId::from(7853137);
     let block= provider
         .get_block(block_number, BlockTransactionsKind::Full)
         .await?;
@@ -108,6 +109,6 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> 
 {
-    encode_transaction().await
-    //encode_block().await
+    //encode_transaction().await
+    encode_block().await
 }
