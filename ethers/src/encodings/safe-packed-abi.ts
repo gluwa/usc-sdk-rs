@@ -35,7 +35,7 @@ export function safeGetFieldsForType0(tx: TransactionResponse): EncodedFields {
             tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
-    
+
     const safe = insertSeparator(out);
     return safe;
 }
@@ -43,10 +43,10 @@ export function safeGetFieldsForType0(tx: TransactionResponse): EncodedFields {
 export function safeGetFieldsForType1(tx: TransactionResponse): EncodedFields {
     const out = {
         types: [
-            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
+            "uint8", "uint64", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+            tx.type, tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
         ]
     };
     const safe = insertSeparator(out);
@@ -141,8 +141,8 @@ function safeEncodeLog(log: Log): string {
 export function safeSolidityPackedEncode(tx: TransactionResponse, rx: TransactionReceipt) {
     const txFields = safeGetFieldsForType(tx);
     const receiptFields = safeGetReceiptFields(rx);
-    const allFieldTypes = [...txFields.types, ...receiptFields.types];
-    const allFieldValues = [...txFields.values, ...receiptFields.values];
+    const allFieldTypes = [...txFields.types, ...['uint8'], ...receiptFields.types];
+    const allFieldValues = [...txFields.values, ...[SEPARATOR], ...receiptFields.values];
 
     const abi = solidityPacked(allFieldTypes, allFieldValues);
 
