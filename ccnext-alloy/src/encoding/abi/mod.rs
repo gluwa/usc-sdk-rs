@@ -17,40 +17,12 @@ pub enum EncodeError {
     Custom(String),
 }
 
-/*
-function getFieldsForType0(tx: TransactionResponse): EncodedFields {
-  return {
-    types: [
-      "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
-    ],
-    values: [
-      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
-    ]
-  };
-}
-*/
 pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
-    // keep this to use later.
-    // let types = vec![
-    //     DynSolType::Uint(8),
-    //     DynSolType::Uint(64),
-    //     DynSolType::Uint(128),
-    //     DynSolType::Uint(64),
-    //     DynSolType::Address,
-    //     DynSolType::Address,
-    //     DynSolType::Uint(256),
-    //     DynSolType::Bytes,
-    //     DynSolType::Uint(256),
-    //     DynSolType::FixedBytes(32),
-    //     DynSolType::FixedBytes(32)
-    // ];
 
     // Extract transaction fields
     let signature = signed_tx.signature();
     let chain_id = tx.chain_id();
     let v = compute_v(signature, chain_id);
-    
-    //println!("chain_id {:?}, network v: {:?}, v: {:?}", chain_id, v, if signature.v() { 28 } else { 27 });
     
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(0), 8),                            // Transaction type 0
@@ -97,18 +69,6 @@ pub fn encode_transaction_type_1(
     values
 }
 
-/*
-function getFieldsForType2(tx: TransactionResponse): EncodedFields {
-  return {
-    types: [
-      "uint8", "uint64", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
-    ],
-    values: [
-      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
-    ]
-  };
-}
- */
 pub fn encode_transaction_type_2(
     tx: Transaction,
     signed_tx: Signed<TxEip1559>,
@@ -138,20 +98,6 @@ pub fn encode_transaction_type_2(
     values
 }
 
-/*
-function getFieldsForType3(tx: TransactionResponse): EncodedFields {
-  const out = {
-    types: [
-      "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,uint256[])[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
-    ],
-    values: [
-      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
-    ]
-  };
-
-  return out;
-}
-   */
 pub fn encode_transaction_type_3(
     tx: Transaction,
     signed_tx: Signed<TxEip4844Variant>,
@@ -232,20 +178,13 @@ pub fn encode_transaction_type_4(
     values
 }
 
-// fn encode_other(_tx: Transaction) -> Vec<DynSolValue> {
-//     todo!("must implement in case a fork upgrade of ethereum happens, we don't want to be stuck")
-// }
-
 pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
     match tx.inner.clone() {
         TxEnvelope::Legacy(signed_tx) => encode_transaction_type_0(tx, signed_tx),
         TxEnvelope::Eip2930(signed_tx) => encode_transaction_type_1(tx, signed_tx),
         TxEnvelope::Eip1559(signed_tx) => encode_transaction_type_2(tx, signed_tx),
         TxEnvelope::Eip4844(signed_tx) => encode_transaction_type_3(tx, signed_tx),
-        TxEnvelope::Eip7702(signed_tx) => encode_transaction_type_4(tx, signed_tx),
-        // _ => {
-        //     encode_other(tx)
-        // }
+        TxEnvelope::Eip7702(signed_tx) => encode_transaction_type_4(tx, signed_tx)
     }
 }
 

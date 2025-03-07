@@ -1,15 +1,10 @@
 use std::{fs::File, io::Write, str::FromStr};
 use alloy::{eips::BlockId, primitives::B256, providers::{Provider, ProviderBuilder}, rpc::types::BlockTransactionsKind};
 use encoding::abi::abi_encode;
-use serde::Serialize;
-
 
 mod encoding;
 
-#[derive(Serialize)]
-struct JsonAbiEncoded(Vec<String>, String);
-
-async fn encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
+async fn _encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
 
     let rpc_url = "https://sepolia-proxy-rpc.creditcoin.network";
     let provider = ProviderBuilder::new().on_http(rpc_url.parse()?);
@@ -35,7 +30,6 @@ async fn encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     if let Some(rx) = maybe_rx {
-        ///let encoded = encoding::abi::abi_encode(tx.clone(), rx.clone())?;
         let solidity_packed = encoding::solidity_pack::solidity_packed_encode(tx.clone(), rx.clone())?;
     
         println!("tx:\n {:?}\n\nrx:\n{:?}", tx.clone(), rx.clone());

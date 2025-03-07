@@ -8,15 +8,6 @@ use alloy::{
         TxEip4844Variant, TxEip7702, TxEnvelope, TxLegacy,
     }, dyn_abi::DynSolValue, primitives::{Address, B256, U256}, rpc::types::{Transaction, TransactionReceipt}
 };
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum EncodeError {
-    #[error("Custom error: {0}")]
-    Custom(String),
-}
-
-
 
 pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
 

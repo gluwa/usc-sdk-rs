@@ -8,13 +8,6 @@ use alloy::{
         TxEip4844Variant, TxEip7702, TxEnvelope, TxLegacy,
     }, dyn_abi::DynSolValue, primitives::{Address, B256, U256}, rpc::types::{Transaction, TransactionReceipt}
 };
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum EncodeError {
-    #[error("Custom error: {0}")]
-    Custom(String),
-}
 
 fn insert_separator(values: Vec<DynSolValue>) -> Vec<DynSolValue> {
 
