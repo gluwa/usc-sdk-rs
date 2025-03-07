@@ -6,13 +6,34 @@ interface EncodedFields {
   values: any[] | any[][];
 }
 
+/*
+// revisit legacy encoding..
+    let types = vec![
+        DynSolType::Uint(8), 
+        DynSolType::Uint(64),
+        DynSolType::Uint(128),
+        DynSolType::Uint(64),
+        DynSolType::Address,
+        DynSolType::Address,
+        DynSolType::Uint(256),
+        DynSolType::Bytes,
+        DynSolType::Uint(256),
+        DynSolType::FixedBytes(32),
+        DynSolType::FixedBytes(32)
+    ];
+*/
 function getFieldsForType0(tx: TransactionResponse): EncodedFields {
+
+
+
   return {
     types: [
-      "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+      "uint8", "uint64", "uint128", "uint64", "address", "address", 
+      "uint256", "bytes", "uint8", "bytes32", "bytes32"
     ],
     values: [
-      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), 
+      tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
     ]
   };
 }
@@ -23,7 +44,7 @@ function getFieldsForType1(tx: TransactionResponse): EncodedFields {
       "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
     ],
     values: [
-      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+      tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV, tx.signature.r, tx.signature.s
     ]
   };
 }
@@ -91,8 +112,8 @@ function getReceiptFields(rx: TransactionReceipt): EncodedFields {
 function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
   const txFields = getFieldsForType(tx);
   const receiptFields = getReceiptFields(rx);
-  const allFieldTypes = [...txFields.types, ...receiptFields.types];
-  const allFieldValues = [...txFields.values, ...receiptFields.values];
+  const allFieldTypes = [...txFields.types]//, ...receiptFields.types];
+  const allFieldValues = [...txFields.values]//, ...receiptFields.values];
   const abi = AbiCoder.defaultAbiCoder().encode(allFieldTypes, allFieldValues);
   return {
     types: allFieldTypes,

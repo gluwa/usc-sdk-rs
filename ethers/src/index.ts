@@ -16,11 +16,11 @@ async function singleTransactionEncoding(transactionHash: string) {
     const abi = abiEncode(transaction!, receipt!);
     console.log(JSON.stringify(abi));
 
-    const packedAbi = packedAbiEncode(transaction!, receipt!);
-    console.log(JSON.stringify(packedAbi));
+    // const packedAbi = packedAbiEncode(transaction!, receipt!);
+    // console.log(JSON.stringify(packedAbi));
 
-    const packedAbiWithSeperator = packedAbiEncodeWithSeparator(transaction!, receipt!);
-    console.log(JSON.stringify(packedAbiWithSeperator));
+    // const packedAbiWithSeperator = packedAbiEncodeWithSeparator(transaction!, receipt!);
+    // console.log(JSON.stringify(packedAbiWithSeperator));
 }
 
 async function loadBlockAndEncode(blockNumber: bigint) {
@@ -74,8 +74,8 @@ function writeToFile(file: string, data: any) {
 }
 
 async function main() {
-    await loadBlockAndEncode(BigInt(7846292));
-    //await singleTransactionEncoding("0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2");
+    //await loadBlockAndEncode(BigInt(7846292));
+    await singleTransactionEncoding("0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2");
 }
 
 main()

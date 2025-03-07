@@ -9,7 +9,7 @@ interface EncodedFields {
 function getFieldsForType0(tx: TransactionResponse): EncodedFields {
     return {
         types: [
-            "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+            "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint8", "bytes32", "bytes32"
         ],
         values: [
             tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
@@ -23,7 +23,7 @@ function getFieldsForType1(tx: TransactionResponse): EncodedFields {
             "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV, tx.signature.r, tx.signature.s
         ]
     };
 }
