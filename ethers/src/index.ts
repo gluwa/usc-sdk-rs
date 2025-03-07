@@ -74,8 +74,8 @@ function writeToFile(file: string, data: any) {
 }
 
 async function main() {
-    //await loadBlockAndEncode(BigInt(7846292));
-    await singleTransactionEncoding("0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2");
+    await loadBlockAndEncode(BigInt(7846292));
+    //await singleTransactionEncoding("0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2");
 }
 
 main()
