@@ -6,14 +6,9 @@ use super::common::{
 };
 use alloy::{
     consensus::{
-        Signed, Transaction as ConsensusTransaction, TxEip1559, TxEip2930, TxEip4844,
+        Signed, Transaction as ConsensusTransaction, TxEip1559, TxEip2930,
         TxEip4844Variant, TxEip7702, TxEnvelope, TxLegacy,
-    },
-    dyn_abi::{abi::encode_sequence, DynSolType, DynSolValue, DynToken, JsonAbiExt},
-    primitives::{Address, B256, U256},
-    rpc::types::{AccessList, Transaction, TransactionReceipt},
-    sol,
-    sol_types::{utils::words_for_len, SolValue},
+    }, dyn_abi::{DynSolType, DynSolValue}, primitives::{Address, B256, U256}, rpc::types::{Transaction, TransactionReceipt}
 };
 use thiserror::Error;
 
@@ -253,13 +248,55 @@ fn encode_dyn_sol_values(values: Vec<DynSolValue>) -> Vec<u8> {
     encoded_bytes
 }
 
+/*
+function getReceiptFields(rx: TransactionReceipt): EncodedFields {
+  return {
+    types: [
+      "uint256", "uint256", "tuple(address, bytes32[], bytes)[]", "bytes"
+    ],
+    values: [
+      rx.status, rx.gasUsed, rx.logs.map(log => [log.address, log.topics, log.data]), rx.logsBloom
+    ]
+  };
+}
+*/
+fn encode_receipt(rx: TransactionReceipt) -> Vec<DynSolValue> {
+
+    let log_blooms = rx.inner.logs_bloom().0.to_vec();
+    let result = vec![
+        DynSolValue::Uint(U256::from(rx.status()), 8),
+        DynSolValue::Uint(U256::from(rx.gas_used), 64),
+        DynSolValue::Array(
+            rx.inner.logs().into_iter().map(|log| {
+
+                let topics = DynSolValue::Array(log.topics().into_iter().map(|topic| {
+                    DynSolValue::FixedBytes(topic.clone(), 32)
+                }).collect());
+
+                DynSolValue::Tuple(vec![
+                    DynSolValue::Address(log.address()),
+                    topics,
+                    DynSolValue::Bytes(log.data().data.to_vec())
+                ])
+            }).collect()
+        ),
+        DynSolValue::Bytes(log_blooms),
+    ];
+
+    result
+}
+
 pub fn abi_encode(
     tx: Transaction,
-    _rx: TransactionReceipt,
+    rx: TransactionReceipt,
 ) -> Result<AbiEncodeResult, Box<dyn std::error::Error>> {
 
     let transaction_fields = encode_transaction(tx);
-    let tuple = DynSolValue::Tuple(transaction_fields);
+    let receipt_fields = encode_receipt(rx);
+    let mut all_fields = Vec::new();
+    all_fields.extend(transaction_fields);
+    all_fields.extend(receipt_fields);
+    let tuple = DynSolValue::Tuple(all_fields.clone());
     let final_bytes = match tuple.abi_encode_sequence() {
         Some(final_bytes) => {
             final_bytes
@@ -269,17 +306,19 @@ pub fn abi_encode(
         }
     };
 
-    // const txFields = getFieldsForType(tx);
-    // const receiptFields = getReceiptFields(rx);
-    // const allFieldTypes = [...txFields.types, ...receiptFields.types];
-    // const allFieldValues = [...txFields.values, ...receiptFields.values];
-    // const abi = AbiCoder.defaultAbiCoder().encode(allFieldTypes, allFieldValues);
-    // return {
-    //   types: allFieldTypes,
-    //   abi
-    // }
+    let field_type: Vec<String> = all_fields.into_iter().map(|field| {
+
+        match field.as_type() {
+            Some(sol_type) => {
+                sol_type.sol_type_name().into_owned()
+            },
+            None => "unknown".into()
+        }
+
+    }).collect();
+
     Ok(AbiEncodeResult {
-        types: vec![DynSolType::Int(8)],
+        types: field_type,
         abi: final_bytes,
     })
 }

@@ -8,7 +8,7 @@ use alloy::signers::Signature;
 
 pub struct AbiEncodeResult
 {
-    pub types: Vec<DynSolType>,
+    pub types: Vec<String>,
     pub abi: Vec<u8>
 }
 

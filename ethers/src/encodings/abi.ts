@@ -112,8 +112,8 @@ function getReceiptFields(rx: TransactionReceipt): EncodedFields {
 function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
   const txFields = getFieldsForType(tx);
   const receiptFields = getReceiptFields(rx);
-  const allFieldTypes = [...txFields.types]//, ...receiptFields.types];
-  const allFieldValues = [...txFields.values]//, ...receiptFields.values];
+  const allFieldTypes = [...txFields.types, ...receiptFields.types];
+  const allFieldValues = [...txFields.values, ...receiptFields.values];
   const abi = AbiCoder.defaultAbiCoder().encode(allFieldTypes, allFieldValues);
   return {
     types: allFieldTypes,
