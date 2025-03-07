@@ -29,13 +29,13 @@ export function safeGetFieldsForType0(tx: TransactionResponse): EncodedFields {
 
     const out = {
         types: [
-            "uint8", "uint64", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.chainId, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
+            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
-
+    
     const safe = insertSeparator(out);
     return safe;
 }
@@ -59,7 +59,7 @@ export function safeGetFieldsForType2(tx: TransactionResponse): EncodedFields {
             "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+            tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas ?? 0, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
         ]
     };
     const safe = insertSeparator(out);
@@ -69,10 +69,10 @@ export function safeGetFieldsForType2(tx: TransactionResponse): EncodedFields {
 export function safeGetFieldsForType3(tx: TransactionResponse): EncodedFields {
     const out = {
         types: [
-            "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
+            "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint128", "bytes32[]", "uint8", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
+            tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas ?? 0, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, safeEncodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
         ]
     };
 

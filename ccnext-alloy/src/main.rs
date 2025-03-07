@@ -69,6 +69,7 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
                     // we have block and receipts now :)
                     let mut transaction_abis = Vec::new();
                     let mut transaction_packed_abi = Vec::new();
+                    let mut transaction_safe_packed_abi = Vec::new();
 
                     let transactions = block.transactions.into_transactions_vec();
                     let transaction_and_receipts = transactions
@@ -78,21 +79,27 @@ async fn encode_block() -> Result<(), Box<dyn std::error::Error>>
                     for (tx, rx) in  transaction_and_receipts{
                         let encoded = abi_encode(tx.clone(), rx.clone())?;
                         let packed_encoded = encoding::solidity_pack::solidity_packed_encode(tx.clone(), rx.clone())?;
+                        let safe_packed_encoded = encoding::safe_solidity_pack::safe_solidity_packed_encode(tx.clone(), rx.clone())?;
                         // transaction_abis.push(JsonAbiEncoded {
                         //     types: encoded.types,
                         //     abi: format!("0x{}", hex::encode(encoded.abi))
                         // });
                         transaction_abis.push(format!("0x{}", hex::encode(encoded.abi)).to_string());
                         transaction_packed_abi.push(format!("0x{}", hex::encode(packed_encoded.abi).to_string()));
+                        transaction_safe_packed_abi.push(format!("0x{}", hex::encode(safe_packed_encoded.abi).to_string()));
                     }
 
                     let json_string = serde_json::to_string_pretty(&transaction_abis)?;
                     let mut file = File::create("../ignore/alloy-out/block.json")?;
                     file.write_all(json_string.as_bytes())?;
 
-                    let json_string2 = serde_json::to_string_pretty(&transaction_packed_abi)?;
+                    let json_string_packed = serde_json::to_string_pretty(&transaction_packed_abi)?;
                     let mut file = File::create("../ignore/alloy-out/solidity-packed-block.json")?;
-                    file.write_all(json_string2.as_bytes())?;
+                    file.write_all(json_string_packed.as_bytes())?;
+
+                    let json_string_safed_packed = serde_json::to_string_pretty(&transaction_safe_packed_abi)?;
+                    let mut file = File::create("../ignore/alloy-out/safe-solidity-packed-block.json")?;
+                    file.write_all(json_string_safed_packed.as_bytes())?;
                 },
                 None => {
                     println!("Could not find receipts for block {:?}", block_number);

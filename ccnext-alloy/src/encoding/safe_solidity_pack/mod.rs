@@ -16,6 +16,20 @@ pub enum EncodeError {
     Custom(String),
 }
 
+fn insert_separator(values: Vec<DynSolValue>) -> Vec<DynSolValue> {
+
+    let mut new_values = Vec::with_capacity(values.len() * 2 - 1);
+    let separator = DynSolValue::Uint(U256::from(0), 8);
+    let values_length = values.len();
+    for (i, value) in values.into_iter().enumerate() {
+        new_values.push(value);
+        if i < values_length - 1 {
+            new_values.push(separator.clone());
+        }
+    }
+
+    new_values
+}
 
 
 pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
@@ -24,8 +38,6 @@ pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -
     let signature = signed_tx.signature();
     let chain_id = tx.chain_id();
     let v = compute_v(signature, chain_id);
-
-    
     
     //println!("chain_id {:?}, network v: {:?}, v: {:?}", chain_id, v, if signature.v() { 28 } else { 27 });
     
@@ -42,7 +54,7 @@ pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -
         DynSolValue::FixedBytes(B256::from(signature.r()), 32),         // r
         DynSolValue::FixedBytes(B256::from(signature.s()), 32)          // s
     ];
-    
+
     values
 }
 
@@ -74,6 +86,18 @@ pub fn encode_transaction_type_1(
     values
 }
 
+/*
+function getFieldsForType2(tx: TransactionResponse): EncodedFields {
+  return {
+    types: [
+      "uint8", "uint64", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
+    ],
+    values: [
+      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+    ]
+  };
+}
+ */
 pub fn encode_transaction_type_2(
     tx: Transaction,
     signed_tx: Signed<TxEip1559>,
@@ -103,6 +127,20 @@ pub fn encode_transaction_type_2(
     values
 }
 
+/*
+function getFieldsForType3(tx: TransactionResponse): EncodedFields {
+  const out = {
+    types: [
+      "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,uint256[])[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
+    ],
+    values: [
+      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
+    ]
+  };
+
+  return out;
+}
+   */
 pub fn encode_transaction_type_3(
     tx: Transaction,
     signed_tx: Signed<TxEip4844Variant>,
@@ -240,7 +278,7 @@ fn encode_receipt(rx: TransactionReceipt) -> Vec<DynSolValue> {
     result
 }
 
-pub fn solidity_packed_encode(
+pub fn safe_solidity_packed_encode(
     tx: Transaction,
     rx: TransactionReceipt,
 ) -> Result<AbiEncodeResult, Box<dyn std::error::Error>> {

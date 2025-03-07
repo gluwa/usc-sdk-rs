@@ -45,14 +45,22 @@ async function loadBlockAndEncode(blockNumber: bigint) {
 
         const encodedAbi = abiEncode(tx, rx);
         const solidityPackedEncodedAbi = solidityPackedEncode(tx, rx);
-        //const safeSolidityPackedEncodedAbi = safeSolidityPackedEncode(tx, rx);
+
+        let safeSolidityPackedEncodedAbi;
+        try {
+            safeSolidityPackedEncodedAbi = safeSolidityPackedEncode(tx, rx);
+        }
+        catch(ex) {
+            console.error('failed to process', tx);
+            throw ex;
+        }
 
 
         encodedTransactions.push({
             transactionIndex: i,
             abi: encodedAbi,
             solidityPacked: solidityPackedEncodedAbi,
-            // safeSolidityPacked: safeSolidityPackedEncodedAbi
+            safeSolidityPacked: safeSolidityPackedEncodedAbi
         });
     }
 
@@ -61,10 +69,10 @@ async function loadBlockAndEncode(blockNumber: bigint) {
 
     const blockAbiFile = encodedTransactions.map(t => t.abi.abi);
     const packedBlockAbiFile = encodedTransactions.map(t => t.solidityPacked.abi);
-    // const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.safeSolidityPacked.abi);
+    const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.safeSolidityPacked.abi);
     writeToFile("../ignore/ethers-out/block.json", blockAbiFile);
     writeToFile("../ignore/ethers-out/solidity-packed-block.json", packedBlockAbiFile);
-    // writeToFile("../ignore/ethers-out/safe-solidity-packed-block.json", packedBlockAbiWithSeparatorFile);
+    writeToFile("../ignore/ethers-out/safe-solidity-packed-block.json", packedBlockAbiWithSeparatorFile);
 }
 
 function writeToFile(file: string, data: any) {
