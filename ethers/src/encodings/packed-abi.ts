@@ -1,48 +1,44 @@
 import { Log, TransactionReceipt, TransactionResponse, solidityPacked, AccessList } from "ethers";
 import { addressOrZero } from "./utils";
+import { EncodedFields } from "./common";
 
-interface EncodedFields {
-    types: string[];
-    values: any[];
-}
-
-function getFieldsForType0(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType0(tx: TransactionResponse): EncodedFields {
     return {
         types: [
-            "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint8", "bytes32", "bytes32"
+            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.v, tx.signature.r, tx.signature.s
+            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV ?? tx.signature.v, tx.signature.r, tx.signature.s
         ]
     };
 }
 
-function getFieldsForType1(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType1(tx: TransactionResponse): EncodedFields {
     return {
         types: [
-            "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "uint256", "bytes32", "bytes32"
+            "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
         ],
         values: [
-            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, tx.signature.networkV, tx.signature.r, tx.signature.s
+            tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
         ]
     };
 }
 
-function getFieldsForType2(tx: TransactionResponse): EncodedFields {
-    return {
-        types: [
-            "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32", "bytes32"
-        ],
-        values: [
-            tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
-        ]
-    };
+export function getFieldsForType2(tx: TransactionResponse): EncodedFields {
+  return {
+    types: [
+      "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint8", "bytes32", "bytes32"
+    ],
+    values: [
+      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.signature.yParity, tx.signature.r, tx.signature.s
+    ]
+  };
 }
 
-function getFieldsForType3(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   const out = {
     types: [
-      "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint256", "bytes32", "bytes32"
+      "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "bytes[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
     ],
     values: [
       tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
@@ -52,7 +48,7 @@ function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   return out;
 }
 
-function getFieldsForType(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType(tx: TransactionResponse): EncodedFields {
     switch (tx.type) {
         case 0:
             return getFieldsForType0(tx);
@@ -67,12 +63,12 @@ function getFieldsForType(tx: TransactionResponse): EncodedFields {
     }
 }
 
-function encodeAccessListItem(item: { address: string, storageKeys: string[] }) {
+export function encodeAccessListItem(item: { address: string, storageKeys: string[] }) {
     const accessListEncoded = solidityPacked(["address", "bytes32[]"], [item.address,item.storageKeys]);
     return accessListEncoded;
 }
 
-function encodeAccessList(accessList: AccessList | null): string[] {
+export function encodeAccessList(accessList: AccessList | null): string[] {
 
     if (!accessList)
         return [];
@@ -81,10 +77,10 @@ function encodeAccessList(accessList: AccessList | null): string[] {
     return result;
 }
 
-function getReceiptFields(rx: TransactionReceipt): EncodedFields {
+export function getReceiptFields(rx: TransactionReceipt): EncodedFields {
     return {
         types: [
-            "uint256", "uint256", "bytes[]", "bytes"
+            "uint8", "uint64", "bytes[]", "bytes"
         ],
         values: [
             rx.status, rx.gasUsed, rx.logs.map(encodeLog), rx.logsBloom
@@ -92,7 +88,7 @@ function getReceiptFields(rx: TransactionReceipt): EncodedFields {
     };
 }
 
-function encodeLog(log: Log): string {
+export function encodeLog(log: Log): string {
 
     const result = solidityPacked(
         ["address", "bytes[]", "bytes"],
@@ -102,7 +98,7 @@ function encodeLog(log: Log): string {
     return result;
 }
 
-function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
+export function solidityPackedEncode(tx: TransactionResponse, rx: TransactionReceipt) {
     const txFields = getFieldsForType(tx);
     const receiptFields = getReceiptFields(rx);
     const allFieldTypes = [...txFields.types, ...receiptFields.types];
@@ -115,5 +111,3 @@ function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
         abi
     };
 }
-
-export { getFieldsForType, getReceiptFields, abiEncode };

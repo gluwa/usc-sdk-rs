@@ -1,12 +1,9 @@
 import { TransactionResponse, TransactionReceipt, AccessList, AbiCoder, ZeroAddress } from "ethers";
 import { addressOrZero } from "./utils";
+import { EncodedFields } from "./common";
 
-interface EncodedFields {
-  types: string[];
-  values: any[] | any[][];
-}
-
-function getFieldsForType0(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType0(tx: TransactionResponse): EncodedFields {
+  //console.log('chainId', tx.chainId, 'Network V', tx.signature.networkV, 'V', tx.signature.v);
   return {
     types: [
       "uint8", "uint64", "uint128", "uint64", "address", "address", 
@@ -19,10 +16,10 @@ function getFieldsForType0(tx: TransactionResponse): EncodedFields {
   };
 }
 
-function getFieldsForType1(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType1(tx: TransactionResponse): EncodedFields {
   return {
     types: [
-      "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
+      "uint8", "uint64", "uint128", "uint64", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
     ],
     values: [
       tx.type, tx.nonce, tx.gasPrice, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList),tx.signature.yParity, tx.signature.r, tx.signature.s
@@ -30,7 +27,7 @@ function getFieldsForType1(tx: TransactionResponse): EncodedFields {
   };
 }
 
-function getFieldsForType2(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType2(tx: TransactionResponse): EncodedFields {
   return {
     types: [
       "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "tuple(address,bytes32[])[]", "uint8", "bytes32", "bytes32"
@@ -41,7 +38,7 @@ function getFieldsForType2(tx: TransactionResponse): EncodedFields {
   };
 }
 
-function encodeAccessList(accessList: AccessList | null) {
+export function encodeAccessList(accessList: AccessList | null) {
   if (accessList == null)
     return [];
 
@@ -51,7 +48,7 @@ function encodeAccessList(accessList: AccessList | null) {
   ]);
 }
 
-function getFieldsForType3(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   const out = {
     types: [
       "uint8", "uint64", "uint64", "uint128", "uint128", "uint64", "address", "address", "uint256", "bytes", "tuple(address,uint256[])[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
@@ -64,7 +61,7 @@ function getFieldsForType3(tx: TransactionResponse): EncodedFields {
   return out;
 }
 
-function getFieldsForType(tx: TransactionResponse): EncodedFields {
+export function getFieldsForType(tx: TransactionResponse): EncodedFields {
   switch (tx.type) {
     case 0:
       return getFieldsForType0(tx);
@@ -79,10 +76,10 @@ function getFieldsForType(tx: TransactionResponse): EncodedFields {
   }
 }
 
-function getReceiptFields(rx: TransactionReceipt): EncodedFields {
+export function getReceiptFields(rx: TransactionReceipt): EncodedFields {
   return {
     types: [
-      "uint256", "uint256", "tuple(address, bytes32[], bytes)[]", "bytes"
+      "uint8", "uint64", "tuple(address, bytes32[], bytes)[]", "bytes"
     ],
     values: [
       rx.status, rx.gasUsed, rx.logs.map(log => [log.address, log.topics, log.data]), rx.logsBloom
@@ -90,7 +87,7 @@ function getReceiptFields(rx: TransactionReceipt): EncodedFields {
   };
 }
 
-function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
+export function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
   const txFields = getFieldsForType(tx);
   const receiptFields = getReceiptFields(rx);
   const allFieldTypes = [...txFields.types, ...receiptFields.types];
@@ -101,5 +98,3 @@ function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
     abi
   }
 }
-
-export { getFieldsForType0, getFieldsForType1, getFieldsForType2, getFieldsForType, getReceiptFields, abiEncode };

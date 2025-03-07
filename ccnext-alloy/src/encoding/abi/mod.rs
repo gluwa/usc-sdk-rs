@@ -50,9 +50,9 @@ pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -
     let signature = signed_tx.signature();
     let chain_id = tx.chain_id();
     let v = compute_v(signature, chain_id);
-
-    println!("0x{}", hex::encode(tx.input().to_vec()));
-
+    
+    //println!("chain_id {:?}, network v: {:?}, v: {:?}", chain_id, v, if signature.v() { 28 } else { 27 });
+    
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(0), 8),                            // Transaction type 0
         DynSolValue::Uint(U256::from(signed_tx.tx().nonce), 64),        // Nonce
@@ -233,6 +233,10 @@ pub fn encode_transaction_type_4(
     values
 }
 
+fn encode_other(_tx: Transaction) -> Vec<DynSolValue> {
+    todo!("must implement in case a fork upgrade of ethereum happens, we don't want to be stuck")
+}
+
 pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
     match tx.inner.clone() {
         TxEnvelope::Legacy(signed_tx) => encode_transaction_type_0(tx, signed_tx),
@@ -240,31 +244,12 @@ pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
         TxEnvelope::Eip1559(signed_tx) => encode_transaction_type_2(tx, signed_tx),
         TxEnvelope::Eip4844(signed_tx) => encode_transaction_type_3(tx, signed_tx),
         TxEnvelope::Eip7702(signed_tx) => encode_transaction_type_4(tx, signed_tx),
+        _ => {
+            encode_other(tx)
+        }
     }
 }
 
-fn encode_dyn_sol_values(values: Vec<DynSolValue>) -> Vec<u8> {
-    let mut encoded_bytes = Vec::new();
-
-    for value in values.iter() {
-        encoded_bytes.extend(value.abi_encode());
-    }
-
-    encoded_bytes
-}
-
-/*
-function getReceiptFields(rx: TransactionReceipt): EncodedFields {
-  return {
-    types: [
-      "uint256", "uint256", "tuple(address, bytes32[], bytes)[]", "bytes"
-    ],
-    values: [
-      rx.status, rx.gasUsed, rx.logs.map(log => [log.address, log.topics, log.data]), rx.logsBloom
-    ]
-  };
-}
-*/
 fn encode_receipt(rx: TransactionReceipt) -> Vec<DynSolValue> {
 
     let log_blooms = rx.inner.logs_bloom().0.to_vec();

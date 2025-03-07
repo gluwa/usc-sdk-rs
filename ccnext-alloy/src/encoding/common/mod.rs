@@ -4,8 +4,10 @@ use alloy::eips::eip7702::SignedAuthorization;
 use alloy::primitives::{FixedBytes, B256, U256};
 use alloy::rpc::types::{AccessListItem};
 use alloy::signers::Signature;
+use serde::{Deserialize, Serialize};
 
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AbiEncodeResult
 {
     pub types: Vec<String>,
@@ -16,7 +18,7 @@ pub fn compute_v(signature: &Signature, chain_id: Option<u64>) -> U256 {
     let parity = signature.v() as u64; // Get y_parity (boolean as 0 or 1)
 
     match chain_id {
-        Some(id) => U256::from(27 + 2 * id + parity), // EIP-155 format
+        Some(id) => U256::from(35 + 2 * id + parity), // Corrected EIP-155 format
         None => U256::from(27 + parity), // Legacy format
     }
 }

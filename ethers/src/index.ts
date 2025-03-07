@@ -1,9 +1,9 @@
 import { JsonRpcProvider } from "ethers";
 import { abiEncode } from "./encodings/abi";
-import { abiEncode as packedAbiEncode } from "./encodings/packed-abi";
-import { abiEncode as packedAbiEncodeWithSeparator } from "./encodings/packed-abi-seperated";
 import { getBlockReceipts } from "./utils/block-receipt";
 import { writeFileSync } from 'fs';
+import { solidityPackedEncode } from "./encodings/packed-abi";
+import { safeSolidityPackedEncode } from "./encodings/safe-packed-abi";
 
 const rpc = "https://sepolia-proxy-rpc.creditcoin.network";
 const provider = new JsonRpcProvider(rpc);
@@ -16,11 +16,11 @@ async function singleTransactionEncoding(transactionHash: string) {
     const abi = abiEncode(transaction!, receipt!);
     console.log(JSON.stringify(abi));
 
-    // const packedAbi = packedAbiEncode(transaction!, receipt!);
-    // console.log(JSON.stringify(packedAbi));
+    const solidityPackedEncoded = solidityPackedEncode(transaction!, receipt!);
+    console.log(JSON.stringify(solidityPackedEncoded));
 
-    // const packedAbiWithSeperator = packedAbiEncodeWithSeparator(transaction!, receipt!);
-    // console.log(JSON.stringify(packedAbiWithSeperator));
+    const safeSolidityPackedEncoded = safeSolidityPackedEncode(transaction!, receipt!);
+    console.log(JSON.stringify(safeSolidityPackedEncoded));
 }
 
 async function loadBlockAndEncode(blockNumber: bigint) {
@@ -44,15 +44,15 @@ async function loadBlockAndEncode(blockNumber: bigint) {
         
 
         const encodedAbi = abiEncode(tx, rx);
-        const packedAbiEncoded = packedAbiEncode(tx, rx);
-        const packedAbiEncodedWithSeparator = packedAbiEncodeWithSeparator(tx, rx);
+        const solidityPackedEncodedAbi = solidityPackedEncode(tx, rx);
+        const safeSolidityPackedEncodedAbi = safeSolidityPackedEncode(tx, rx);
 
 
         encodedTransactions.push({
             transactionIndex: i,
             abi: encodedAbi,
-            packedAbiEncode: packedAbiEncoded,
-            packedAbiEncodedWithSeparator: packedAbiEncodedWithSeparator
+            solidityPacked: solidityPackedEncodedAbi,
+            safeSolidityPacked: safeSolidityPackedEncodedAbi
         });
     }
 
@@ -60,27 +60,27 @@ async function loadBlockAndEncode(blockNumber: bigint) {
     console.log('time to execute abi encoding of all kinds', end-start);
     
     const blockAbiFile = encodedTransactions.map(t => t.abi.abi);
-    const packedBlockAbiFile = encodedTransactions.map(t => t.packedAbiEncode.abi);
-    const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.packedAbiEncodedWithSeparator.abi);
+    const packedBlockAbiFile = encodedTransactions.map(t => t.solidityPacked.abi);
+    const packedBlockAbiWithSeparatorFile = encodedTransactions.map(t => t.safeSolidityPacked.abi);
     writeToFile("../ignore/ethers-out/block.json", blockAbiFile);
-    writeToFile("../ignore/ethers-out/packed-block.json", packedBlockAbiFile);
-    writeToFile("../ignore/ethers-out/packed-safe-block.json", packedBlockAbiWithSeparatorFile);
+    writeToFile("../ignore/ethers-out/solidity-packed-block.json", packedBlockAbiFile);
+    writeToFile("../ignore/ethers-out/safe-solidity-packed-block.json", packedBlockAbiWithSeparatorFile);
 }
 
 function writeToFile(file: string, data: any) {
-    writeFileSync(file, JSON.stringify(data), {
+    writeFileSync(file, JSON.stringify(data, null, 2), {
         encoding: 'utf-8'
     });
 }
 
 async function main() {
-    //await loadBlockAndEncode(BigInt(7846292));
+    await loadBlockAndEncode(BigInt(7846292));
 
-    let type_3 = "0x085d2fe01372711005b053a1b0d081c13cde19b6ddb77cae847e0d11a0a0cafe";
-    let type_2 = "0xdfba59b94bac3da5af5d0fa8b81ae3199069fa6f38002be58c14e94a051e0642";
-    let legacy = "0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2";
-
-    await singleTransactionEncoding(type_3);
+    // let type_3 = "0x085d2fe01372711005b053a1b0d081c13cde19b6ddb77cae847e0d11a0a0cafe";
+    // let type_2 = "0xdfba59b94bac3da5af5d0fa8b81ae3199069fa6f38002be58c14e94a051e0642";
+    // let legacy = "0x0b50111d729c00bac4a99702b2c88e425321c8f8214bc3272072c730d5ff9ad2";
+    //let not_matching = "0xf09500718fa31ffb89bc0374b95f2b1f39047b2e3e01058984a9697e045a94b3";
+    //await singleTransactionEncoding(not_matching);
 }
 
 main()
