@@ -87,14 +87,22 @@ export function getReceiptFields(rx: TransactionReceipt): EncodedFields {
   };
 }
 
-export function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
+export function getAllFields(tx: TransactionResponse, rx: TransactionReceipt) : EncodedFields {
   const txFields = getFieldsForType(tx);
   const receiptFields = getReceiptFields(rx);
   const allFieldTypes = [...txFields.types, ...receiptFields.types];
   const allFieldValues = [...txFields.values, ...receiptFields.values];
-  const abi = AbiCoder.defaultAbiCoder().encode(allFieldTypes, allFieldValues);
   return {
     types: allFieldTypes,
+    values: allFieldValues
+  };
+}
+
+export function abiEncode(tx: TransactionResponse, rx: TransactionReceipt) {
+  const allFields = getAllFields(tx, rx);
+  const abi = AbiCoder.defaultAbiCoder().encode(allFields.types, allFields.values);
+  return {
+    types: allFields.types,
     abi
   }
 }
