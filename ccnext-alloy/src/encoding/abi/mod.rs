@@ -273,11 +273,11 @@ pub fn abi_encode(
             final_bytes
         },
         None => {
-            return Err(Box::new(EncodeError::Custom("Failed to encore sequence".into())));
+            return Err(Box::new(EncodeError::Custom("Failed to encode sequence".into())));
         }
     };
 
-    let field_type: Vec<String> = all_fields.into_iter().map(|field| {
+    let field_types: Vec<String> = all_fields.into_iter().map(|field| {
 
         match field.as_type() {
             Some(sol_type) => {
@@ -289,7 +289,7 @@ pub fn abi_encode(
     }).collect();
 
     Ok(AbiEncodeResult {
-        types: field_type,
+        types: field_types,
         abi: final_bytes,
     })
 }

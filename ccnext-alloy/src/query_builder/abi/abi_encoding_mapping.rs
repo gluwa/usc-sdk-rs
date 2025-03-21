@@ -1,4 +1,4 @@
-use alloy::{consensus::TxType, dyn_abi::DynSolType, serde::quantity::vec};
+use alloy::{consensus::TxType, dyn_abi::DynSolType};
 use super::models::QueryableFields;
 
 fn get_mapped_fields_for_type0() -> Vec<(QueryableFields, DynSolType)> {
@@ -27,7 +27,15 @@ fn get_mapped_fields_for_type1() -> Vec<(QueryableFields, DynSolType)> {
         ( QueryableFields::TxFrom, DynSolType::Address),
         ( QueryableFields::TxTo, DynSolType::Address),
         ( QueryableFields::TxValue, DynSolType::Bytes),
-        ( QueryableFields::TxAccessList, DynSolType::Tuple(vec![DynSolType::Address, DynSolType::Array(DynSolType::FixedBytes(32).into())])),
+        ( 
+            QueryableFields::TxAccessList, 
+            DynSolType::Array(
+                DynSolType::Tuple(vec![
+                    DynSolType::Address, 
+                    DynSolType::Array(DynSolType::FixedBytes(32).into())
+                ]).into()
+            )
+        ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32))
@@ -46,7 +54,15 @@ fn get_mapped_fields_for_type2() -> Vec<(QueryableFields, DynSolType)> {
         ( QueryableFields::TxTo, DynSolType::Address),
         ( QueryableFields::TxValue, DynSolType::Uint(256)),
         ( QueryableFields::TxData, DynSolType::Bytes),
-        ( QueryableFields::TxAccessList, DynSolType::Tuple(vec![DynSolType::Address, DynSolType::Array(DynSolType::FixedBytes(32).into())])),
+        ( 
+            QueryableFields::TxAccessList, 
+            DynSolType::Array(
+                DynSolType::Tuple(vec![
+                    DynSolType::Address, 
+                    DynSolType::Array(DynSolType::FixedBytes(32).into())
+                ]).into()
+            )
+        ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32))
@@ -66,7 +82,15 @@ fn get_mapped_fields_for_type3() -> Vec<(QueryableFields, DynSolType)>
         ( QueryableFields::TxTo, DynSolType::Address),
         ( QueryableFields::TxValue, DynSolType::Uint(256)),
         ( QueryableFields::TxData, DynSolType::Bytes),
-        ( QueryableFields::TxAccessList, DynSolType::Tuple(vec![DynSolType::Address, DynSolType::Array(DynSolType::FixedBytes(32).into())])),
+        ( 
+            QueryableFields::TxAccessList, 
+            DynSolType::Array(
+                DynSolType::Tuple(vec![
+                    DynSolType::Address, 
+                    DynSolType::Array(DynSolType::FixedBytes(32).into())
+                ]).into()
+            )
+        ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
         ( QueryableFields::TxV, DynSolType::FixedBytes(32))
@@ -85,7 +109,15 @@ fn get_mapped_fields_for_type4() -> Vec<(QueryableFields, DynSolType)>
         ( QueryableFields::TxFrom, DynSolType::Address),
         ( QueryableFields::TxTo, DynSolType::Address),
         ( QueryableFields::TxValue, DynSolType::Bytes),
-        ( QueryableFields::TxAccessList, DynSolType::Tuple(vec![DynSolType::Address, DynSolType::Array(DynSolType::FixedBytes(32).into())])),
+        ( 
+            QueryableFields::TxAccessList, 
+            DynSolType::Array(
+                DynSolType::Tuple(vec![
+                    DynSolType::Address, 
+                    DynSolType::Array(DynSolType::FixedBytes(32).into())
+                ]).into()
+            )
+        ),
         ( 
             QueryableFields::TxSignedAuthorizations, 
             // compare to encode_authorization_list
