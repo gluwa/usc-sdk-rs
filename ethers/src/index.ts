@@ -6,7 +6,7 @@ import { solidityPackedEncode } from "./encodings/packed-abi";
 import { safeSolidityPackedEncode } from "./encodings/safe-packed-abi";
 import { MappedEncodedFields, QueryableFields } from "./query-builder/abi/models";
 import { computeAbiOffsets } from "./query-builder/abi/abi-utils";
-import { play, play2 } from "./experimenting";
+import { assertLayoutOffsetsMatch, play, play2 } from "./experimenting";
 import { ForkedReader } from "./query-builder/common/ForkedReader";
 import { QueryBuilder } from "./query-builder/abi/QueryBuilder";
 
@@ -131,11 +131,9 @@ async function experimentQueryBuilder() {
     const abiEncoded = abiEncode(transaction!, receipt!);
     console.log('ABI', abiEncoded.abi);
 
-
-    //const computedOffsets = computeAbiOffsets(abiEncoded.types.map(type => ParamType.from(type)), abiEncoded.abi);
-    // console.dir(computedOffsets, { depth: 5 });
-    // return;
-
+    // add this to protect execution and verify.
+    const computedAbiOffsets = computeAbiOffsets(abiEncoded.types.map(t => ParamType.from(t)), abiEncoded.abi);
+    assertLayoutOffsetsMatch(abiEncoded.abi, computedAbiOffsets);
 
     // if you're wondering this is the contract of GCRE on testnet sepolia.
     builder.setAbiProvider(async (contractAddress) => {
@@ -145,10 +143,9 @@ async function experimentQueryBuilder() {
     });
 
     builder
+        .addStaticField(QueryableFields.RxStatus)
         .addStaticField(QueryableFields.TxFrom)
-        .addStaticField(QueryableFields.TxTo)
-        .addStaticField(QueryableFields.TxNonce)
-        .addStaticField(QueryableFields.RxStatus);
+        .addStaticField(QueryableFields.TxTo);
 
     // the reason this one checks for a matching topic
     // even though its not a requirement if the ABI dosen't have two different
@@ -164,20 +161,20 @@ async function experimentQueryBuilder() {
         return logDescription.args.from.toLowerCase() == "0x9d6bC9763008AD1F7619a3498EfFE9Ec671b276D".toLowerCase() && logDescription.args.to.toLowerCase() == ZeroAddress.toLowerCase();
     };
 
-    // notice this filter function dosen't require a check of the topic
-    // thats because we are using add event argument by signature
-    // which ensures no other type of events can be loaded.
-    const burntEventFilter = (log: Log, logDescription: LogDescription, _: number) => {
-        if (log.address.toLowerCase() != "0x47C30768E4c153B40d55b90F58472bb2291971e6".toLowerCase())
-            return false;
+    // // notice this filter function dosen't require a check of the topic
+    // // thats because we are using add event argument by signature
+    // // which ensures no other type of events can be loaded.
+    // const burntEventFilter = (log: Log, logDescription: LogDescription, _: number) => {
+    //     if (log.address.toLowerCase() != "0x47C30768E4c153B40d55b90F58472bb2291971e6".toLowerCase())
+    //         return false;
 
-        return logDescription.args.from.toLowerCase() == "0x9d6bC9763008AD1F7619a3498EfFE9Ec671b276D".toLowerCase();
-    };
+    //     return logDescription.args.from.toLowerCase() == "0x9d6bC9763008AD1F7619a3498EfFE9Ec671b276D".toLowerCase();
+    // };
 
-    // more optimical way, and more fluent.
-    await builder.eventBuilder("0x919f7e2092ffcc9d09f599be18d8152860b0c054df788a33bc549cdd9d0f15b1", burntEventFilter, b => b
-        .addSignature().addArgument("from").addArgument("value")
-    );
+    // // more optimical way, and more fluent.
+    // await builder.eventBuilder("0x919f7e2092ffcc9d09f599be18d8152860b0c054df788a33bc549cdd9d0f15b1", burntEventFilter, b => b
+    //     .addSignature().addArgument("from").addArgument("value")
+    // );
 
     await builder.eventBuilder("Transfer", burnTransferFilter, b => b
         .addSignature().addArgument("from").addArgument("to").addArgument("value")
@@ -196,22 +193,22 @@ async function experimentQueryBuilder() {
 
     // toying with function arguments :)
     // you can ether use the function name or the function signature :D
-    await builder.functionBuilder("burn", b => b
-        .addSignature().addArgument("value")
-    );
+    // await builder.functionBuilder("burn", b => b
+    //     .addSignature().addArgument("value")
+    // );
 
-    // builder.addFunctionSignature();
-    // await builder.addFunctionArgument("burn", "value");
-    // await builder.addFunctionArgument("0x42966c68", "value"); 
-
+    // add function signature and function argument value field.
+    builder.addFunctionSignature();
+    await builder.addFunctionArgument("burn", "value");
 
     const fields = builder.build();
 
     const reader = new ForkedReader(abiEncoded.abi);
+    console.log('\nResult of query segments: ');
     fields.forEach(field => {
         reader.jumpTo(field.offset);
         const data = reader.readBytes(field.size);
-        console.log(field, '\t', hexlify(data));
+        console.log(`(${field.offset}, ${field.size})`, '\t', hexlify(data));
     });
 }
 
@@ -221,6 +218,10 @@ async function complexMultiEventScenario() {
     const receipt = await providerMainnet.getTransactionReceipt(transactionHash);
     const builder = QueryBuilder.createFromTransaction(transaction!, receipt!);
     const abiEncoded = abiEncode(transaction!, receipt!);
+
+    // add this to protect execution and verify.
+    const computedAbiOffsets = computeAbiOffsets(abiEncoded.types.map(t => ParamType.from(t)), abiEncoded.abi);
+    assertLayoutOffsetsMatch(abiEncoded.abi, computedAbiOffsets);
 
     // if you're wondering this is the contract of GCRE on testnet sepolia.
     builder.setAbiProvider(async (contractAddress) => {
@@ -240,10 +241,11 @@ async function complexMultiEventScenario() {
 
     const fields = builder.build();
     const reader = new ForkedReader(abiEncoded.abi);
+    console.log('\nResult of query segments: ');
     fields.forEach(field => {
         reader.jumpTo(field.offset);
         const data = reader.readBytes(field.size);
-        console.log(field, '\t', hexlify(data));
+        console.log(`(${field.offset}, ${field.size})`, '\t', hexlify(data));
     });
 
     // this query can be use as such in solidity.
@@ -261,12 +263,12 @@ async function complexMultiEventScenario() {
 async function main() {
 
     //await experimentAbi();
-    await play2();
-    //await experimentQueryBuilder();
+    //await play2();
+    await experimentQueryBuilder();
     //await complexMultiEventScenario();
 
     // await loadBlockAndEncode(BigInt(7846292));
-    // await loadBlockAndEncode(BigInt(7853137));
+    //await loadBlockAndEncode(BigInt(7853137));
 
     //let type_1 = "0x5c8c6d8c61bd8109ce02717db62b12554c097d156b66e30ff64864b5d4b1c041";
     //let type_3 = "0x085d2fe01372711005b053a1b0d081c13cde19b6ddb77cae847e0d11a0a0cafe";

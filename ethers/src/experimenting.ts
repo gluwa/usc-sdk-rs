@@ -99,40 +99,99 @@ export async function play() {
 }
 
 export async function play2() {
-    let types = ["uint8", "uint256", "tuple(address, bytes32[], bytes)", "uint256", "tuple(address, bytes32, uint256)"];
-    let paramTypes = types.map(t => ParamType.from(t));
+    // let types = ["uint8", "tuple(address, bytes32, uint256)", "uint256", "tuple(address, bytes32[], bytes)", "uint256", "tuple(address, bytes32, uint256)[]"];
+    // let paramTypes = types.map(t => ParamType.from(t));
 
-    const randomContractAddress = "0x5b9f6e3f80ecbc1ce34a46f3e5ebcf79889ffe4b";
-    const eventHashOfErc20Transfer = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-    const randomFrom = "0x968cafa52a81de19c03d23fd0ac38402ec319229";
-    const someData = "0x00d8f1a73af7ba5d8de5385cf269da4488585a95d7574fcc07fed6590a6fbb667bdd8a2fdf998308064493a8e094d9e999fa9659652e71e415ceb81a697b4a5f47316895208cb052a3ebdbeef21186b8fdb61a964cdc89227c1324879bab3ab789b7bce95dc0a46f69ddedb1d1da97";
-    const amount = 1000000;
-    const abiEncodeAmount = AbiCoder.defaultAbiCoder().encode(["uint256"], [amount]);
+    // const randomContractAddress = "0x5b9f6e3f80ecbc1ce34a46f3e5ebcf79889ffe4b";
+    // const eventHashOfErc20Transfer = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+    // const randomFrom = "0x968cafa52a81de19c03d23fd0ac38402ec319229";
+    // const someData = "0x00d8f1a73af7ba5d8de5385cf269da4488585a95d7574fcc07fed6590a6fbb667bdd8a2fdf998308064493a8e094d9e999fa9659652e71e415ceb81a697b4a5f47316895208cb052a3ebdbeef21186b8fdb61a964cdc89227c1324879bab3ab789b7bce95dc0a46f69ddedb1d1da97";
+    // const amount = 1000000;
+    // const abiEncodeAmount = AbiCoder.defaultAbiCoder().encode(["uint256"], [amount]);
 
-    const data = [
+    // const data = [
+    //     1, 
+    //     [ 
+    //         randomContractAddress,
+    //         zeroPadValue(randomFrom, 32),
+    //         100,
+    //     ],
+    //     100, 
+    //     [ 
+    //         randomContractAddress,
+    //         [ 
+    //             eventHashOfErc20Transfer,
+    //             zeroPadValue(randomFrom, 32),
+    //             zeroPadValue(ZeroAddress, 32),
+    //         ],
+    //         abiEncodeAmount
+    //     ],
+    //     5,
+    //     [
+    //         [ 
+    //             randomContractAddress,
+    //             zeroPadValue(randomFrom, 32),
+    //             100,
+    //         ],
+    //         [ 
+    //             randomContractAddress,
+    //             zeroPadValue(randomFrom, 32),
+    //             102,
+    //         ]
+    //     ]
+    // ];
+
+    const types = [
+        "uint8", 
+        "uint8[2]",
+        "uint256", 
+        "bytes[2]",
+        "uint256",
+        "bytes", 
+        "bytes", 
+        "tuple(bool, bool, uint8, uint64, uint256)", 
+        "tuple(address, bytes, uint8[])",
+        "tuple(address, bytes)[]"
+    ];
+    const data: any[] = [
         1, 
-        100, 
-        [ 
-            randomContractAddress,
-            [ 
-                eventHashOfErc20Transfer,
-                zeroPadValue(randomFrom, 32),
-                zeroPadValue(ZeroAddress, 32),
-            ],
-            abiEncodeAmount
+        [2, 3],
+        10,
+        [
+            "0x111111", 
+            "0x222222", 
         ],
-        5,
-        [ 
-            randomContractAddress,
-            zeroPadValue(randomFrom, 32),
-            100,
+        11,
+        "0x000102", 
+        "0x03030303030303030303030303030303030303030303030303030303030303030202020202020202020202020202020202020202020202020202020202020202",
+        [
+            true,
+            false,
+            1,
+            2,
+            3
+        ],
+        [
+            ZeroAddress,
+            "0x000102",
+            [1, 2, 3]
+        ],
+        [
+            [
+                "0x0000000000000000000000000000000000000001",
+                "0x000102"
+            ],
+            [
+                ZeroAddress,
+                "0x000103"
+            ]
         ]
     ];
 
     const encoded = AbiCoder.defaultAbiCoder().encode(types, data);
     console.log(encoded);
 
-    const offsets = computeAbiOffsets(paramTypes, encoded);
+    const offsets = computeAbiOffsets(types.map(t => ParamType.from(t)), encoded);
     console.dir(offsets, { depth: undefined });
 
     const decoded = AbiCoder.defaultAbiCoder().decode(types, encoded);
@@ -141,7 +200,7 @@ export async function play2() {
     assertLayoutOffsetsMatch(encoded, offsets);
 }
 
-function assertLayoutOffsetsMatch(abi: string, decoded: FieldMetadata[], nestedLevel: number = 0, parentIndex: number = 0) {
+export function assertLayoutOffsetsMatch(abi: string, decoded: FieldMetadata[], nestedLevel: number = 0, parentIndex: number = 0) {
     const reader = new ForkedReader(abi);
     for(let i = 0 ; i < decoded.length; i++) {
         const current = decoded[i];
@@ -149,8 +208,10 @@ function assertLayoutOffsetsMatch(abi: string, decoded: FieldMetadata[], nestedL
             // that means its possible to extract bytes.
             reader.jumpTo(current.offset);
             const content = hexlify(reader.readBytes(current.size));
-            if (current.value != content)
+            if (current.value != content) {
+                console.error(content, current.value, current);
                 throw new Error(`field element ${i} at nested level ${nestedLevel} at parent ${parentIndex} dosen't match ${content} != ${current.value}`);
+            }
         }
     
         if (current.children.length) {

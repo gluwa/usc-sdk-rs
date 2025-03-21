@@ -1,12 +1,12 @@
 use super::common::{
-    compute_v, compute_y_parity, encode_access_list, encode_authorization_list, encode_blob_hashes,
+    compute_v, compute_y_parity, encode_blob_hashes,
     AbiEncodeResult,
 };
 use alloy::{
     consensus::{
         Signed, Transaction as ConsensusTransaction, TxEip1559, TxEip2930,
         TxEip4844Variant, TxEip7702, TxEnvelope, TxLegacy,
-    }, dyn_abi::DynSolValue, primitives::{Address, B256, U256}, rpc::types::{Transaction, TransactionReceipt}
+    }, dyn_abi::DynSolValue, eips::eip7702::SignedAuthorization, primitives::{Address, B256, U256}, rpc::types::{AccessListItem, Transaction, TransactionReceipt}
 };
 
 pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
@@ -177,6 +177,50 @@ pub fn encode_transaction_type_4(
 // fn encode_other(_tx: Transaction) -> Vec<DynSolValue> {
 //     todo!("must implement in case a fork upgrade of ethereum happens, we don't want to be stuck")
 // }
+
+pub fn encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
+
+    let mut list = Vec::new();
+    for access_list_item in access_list {
+
+        let mut storage_keys = Vec::new();
+        for storage_item in access_list_item.storage_keys {
+            storage_keys.push(DynSolValue::FixedBytes(storage_item, 32));
+        }
+
+        // Create the `DynSolValue::Tuple` (address, storage_keys)
+        let access_list_tuple = DynSolValue::Tuple(vec![
+            DynSolValue::Address(access_list_item.address),  // Address
+            DynSolValue::Array(storage_keys)          
+        ]);
+
+        let access_list_as_bytes = access_list_tuple.abi_encode_packed();
+        list.push(DynSolValue::Bytes(access_list_as_bytes));
+    }
+
+    // Wrap into `DynSolValue::Array`
+    DynSolValue::Array(list)
+}
+
+pub fn encode_authorization_list(signed_authorizations: Vec<SignedAuthorization>) -> DynSolValue {
+    let mut result = Vec::new();
+    for signed_authorization in signed_authorizations {
+
+        let signed_authorization_tuple = DynSolValue::Tuple(vec![
+            DynSolValue::Uint(U256::from(signed_authorization.chain_id().clone()), 256),
+            DynSolValue::Address(signed_authorization.address().clone()),
+            DynSolValue::Uint(U256::from(signed_authorization.nonce()), 64),
+            DynSolValue::Uint(U256::from(signed_authorization.y_parity()), 8),
+            DynSolValue::Uint(U256::from(signed_authorization.r()), 256),
+            DynSolValue::Uint(U256::from(signed_authorization.s()), 256)
+        ]);
+        
+        let pack_encoded = signed_authorization_tuple.abi_encode_packed();
+        result.push(DynSolValue::Bytes(pack_encoded));
+    }
+
+    DynSolValue::Array(result)
+}
 
 pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
     match tx.inner.clone() {

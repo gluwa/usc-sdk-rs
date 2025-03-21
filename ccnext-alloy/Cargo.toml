@@ -18,8 +18,9 @@ alloy = { version = "0.11", features = [
     "rlp",
     "contract",
     "sol-types",
-    "signers",
+    "signers"
 ] }
+alloy-json-abi = { version = "0.8.23", features = ["serde_json"] }
 tokio = { version = "1", features = ["full"] }
 hex = "0.4"
 thiserror = "1.0"
