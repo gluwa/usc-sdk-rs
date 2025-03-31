@@ -1,4 +1,4 @@
-use alloy::{dyn_abi::{DecodedEvent, DynSolType, EventExt, Specifier}, rpc::types::Log};
+use alloy::{dyn_abi::{DecodedEvent, Specifier}, rpc::types::Log};
 use alloy_json_abi::Event;
 
 use super::{models::{FieldMetadata, QueryBuilderError}, utils::compute_abi_offsets};
@@ -6,17 +6,17 @@ use super::{models::{FieldMetadata, QueryBuilderError}, utils::compute_abi_offse
 pub struct QueryBuilderForEvent {
     field: FieldMetadata,
     log: Log,
-    decoded_event: DecodedEvent,
+    _decoded_event: DecodedEvent,
     event: Event,
     selected_offsets: Vec<(usize, usize)>
 }
 
 impl QueryBuilderForEvent {
-    pub(crate) fn new(log_field: FieldMetadata, log: Log, decoded_event: DecodedEvent, event: Event) -> Self {
+    pub(crate) fn new(log_field: FieldMetadata, log: Log, _decoded_event: DecodedEvent, event: Event) -> Self {
         Self { 
             field: log_field,
             log,
-            decoded_event,
+            _decoded_event,
             event,
             selected_offsets: vec![]
         }
@@ -29,6 +29,8 @@ impl QueryBuilderForEvent {
 
         for event_input in self.event.inputs.clone() {
 
+            // We add 1 before loop contents to skip index 0, which always holds the
+            // event signature.
             if event_input.indexed {
                 topic_index += 1;
             }
@@ -37,7 +39,7 @@ impl QueryBuilderForEvent {
                 if event_input.indexed {
                     // if its indexed..
                     // calculate the offset..
-                    match self.field.children.get(1) {
+                    match self.field.children.get(1) { // Children are 0:address, 1:indexed, and 2:data
                         Some(topics) => {
                             match topics.children.get(topic_index) {
                                 Some(subject_topic) => {

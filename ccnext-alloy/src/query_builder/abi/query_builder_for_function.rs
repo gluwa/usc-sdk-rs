@@ -1,11 +1,11 @@
-use core::slice;
-
-use alloy::{consensus::Transaction as _, dyn_abi::Specifier, rpc::types::Transaction, serde::quantity::vec};
-use alloy_json_abi::{Function, Param};
+use alloy::{consensus::Transaction as _, dyn_abi::Specifier, rpc::types::Transaction};
+use alloy_json_abi::Function;
 
 use crate::query_builder::abi::utils::compute_abi_offsets;
 
 use super::models::{FieldMetadata, QueryBuilderError};
+
+const FUNCTION_SIGNATURE_SIZE: usize = 4;
 
 pub struct QueryBuilderForFunction {
     selected_offsets: Vec<(usize, usize)>,
@@ -31,8 +31,8 @@ impl QueryBuilderForFunction {
     pub fn add_signature(&mut self) -> Result<&mut Self, QueryBuilderError> {
         
         if let Some(size) = self.data_field.size {
-            if size >= 4 {
-                self.selected_offsets.push((self.data_field.offset, 4));
+            if size >= FUNCTION_SIGNATURE_SIZE {
+                self.selected_offsets.push((self.data_field.offset, FUNCTION_SIGNATURE_SIZE));
                 Ok(self)
             } else {
                 Err(QueryBuilderError::DataFieldNotLongEnoughForSignatureExtraction)
@@ -79,9 +79,9 @@ impl QueryBuilderForFunction {
             }
         }
 
-        // now we need to decode the contract call, but only from the slice of 4...onwards..
+        // now we need to decode the contract call, but only from the slice of FUNCTION_SIGNITURE_SIZE...onwards..
         let data = self.tx.inner.input().as_ref();
-        let sliced_data = &data[4..data_size];
+        let sliced_data = &data[FUNCTION_SIGNATURE_SIZE..data_size];
 
         // compute the offsets :)
         let data_computed_offsets = match compute_abi_offsets(calldata_sol_types, sliced_data.into()) {
@@ -93,7 +93,7 @@ impl QueryBuilderForFunction {
             Some(field) => {
                 match field.size {
                     Some(size) => {
-                        self.selected_offsets.push((self.data_field.offset + 4 + field.offset, size));
+                        self.selected_offsets.push((self.data_field.offset + FUNCTION_SIGNATURE_SIZE + field.offset, size));
                         Ok(self)
                     }
                     None => Err(QueryBuilderError::TryingToGetSizeOfDynamicType)
