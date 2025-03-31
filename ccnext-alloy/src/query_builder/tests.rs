@@ -137,10 +137,10 @@ async fn basic_queried_fields_match_expected() {
     let expected_from = tx.from;
     let expected_to = tx.to().expect("Should be to field in contract call");
     let expected_event_address = rx.inner.logs()[1].address();
-    let expected_event_signature = rx.inner.logs()[1].topic0().unwrap();
-    let expected_event_from = rx.inner.logs()[1].topics()[0];
-    let expected_event_to = rx.inner.logs()[1].topics()[1];
-    let expected_event_value = rx.inner.logs()[1].topics()[2];
+    let expected_event_signature = rx.inner.logs()[1].topic0().unwrap().0;
+    let expected_event_from = rx.inner.logs()[1].topics()[1].0;
+    let expected_event_to = rx.inner.logs()[1].topics()[2].0;
+    let expected_event_value = &rx.inner.logs()[1].data().data[..];
     assert!(tx.inner.is_legacy());
     let expected_function_sig: &[u8] = &tx.inner.as_legacy().unwrap().tx().input[0..4];
     let expected_function_value: &[u8] = &tx.inner.as_legacy().unwrap().tx().input[4..36];
@@ -163,4 +163,34 @@ async fn basic_queried_fields_match_expected() {
     let (offset, size) = selected_offsets[2];
     let segment_bytes = &raw[offset..offset + size];
     assert_eq!(&to_padded, segment_bytes);
+    // Checking event address
+    let mut evt_addr_padded: Vec<u8> = vec![0; 12];
+    evt_addr_padded.append(&mut Vec::from(expected_event_address.0.0));
+    let (offset, size) = selected_offsets[3];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(&evt_addr_padded, segment_bytes);
+    // Checking event signature, doesn't need padding
+    let (offset, size) = selected_offsets[4];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(&expected_event_signature, segment_bytes);
+    // Checking from field of event
+    let (offset, size) = selected_offsets[5];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(&expected_event_from, segment_bytes);
+    // Checking to field of event
+    let (offset, size) = selected_offsets[6];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(&expected_event_to, segment_bytes);
+    // Checking value field of event
+    let (offset, size) = selected_offsets[7];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(expected_event_value, segment_bytes);
+    // Checking function signature
+    let (offset, size) = selected_offsets[8];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(expected_function_sig, segment_bytes);
+    // Checking value parameter to function
+    let (offset, size) = selected_offsets[9];
+    let segment_bytes = &raw[offset..offset + size];
+    assert_eq!(expected_function_value, segment_bytes);
 }
