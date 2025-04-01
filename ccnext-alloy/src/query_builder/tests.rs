@@ -2,24 +2,15 @@ use crate::{
     encoding::abi::abi_encode,
     my_abi_provider,
     query_builder::abi::{models::QueryableFields, query_builder::QueryBuilder},
-    query_builder::test_helpers::{check_results, get_transaction_and_receipt, ResultField},
+    query_builder::test_helpers::{
+        check_results, get_transaction_and_receipt, get_vrs, ResultField,
+    },
 };
 use alloy::consensus::Transaction;
 use std::sync::Arc;
 
-// Tx/Rx Fields queried in this test:
-// - Rx Status
-// - Tx From
-// - Tx To (contract addr)
-// - Transfer event:
-//     - Event addr (contract addr)
-//     - Event index 0 (signature)
-//     - Event index 1 (from address)
-//     - Event index 2 (to, burn address)
-//     - Event data field 0 (burned amount)
-// - Call Data:
-//     - Function signature
-//     - data field 0 (burned amount)
+// Tx/Rx Fields queried in this test: All legacy (type 0) fields except Tx Data
+// See abi_encoding_mapping.rs for details
 #[tokio::test]
 async fn legacy_tx_queried_fields_match_expected() {
     // Get legacy transaction via rpc
@@ -39,14 +30,127 @@ async fn legacy_tx_queried_fields_match_expected() {
     }));
 
     query_builder
-        .add_static_field(QueryableFields::RxStatus)
-        .expect("Should work to add from field");
+        .add_static_field(QueryableFields::Type)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxNonce)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxGasPrice)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxGasLimit)
+        .unwrap();
     query_builder
         .add_static_field(QueryableFields::TxFrom)
-        .expect("Should work to add from field");
+        .unwrap();
     query_builder
         .add_static_field(QueryableFields::TxTo)
-        .expect("Should work to add from field");
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxValue)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxV)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxR)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::TxS)
+        .unwrap();
+
+    let selected_offsets = query_builder.get_selected_offsets();
+    let raw = encoded.abi.clone();
+
+    let (v, r, s) = get_vrs(&tx);
+
+    let expected_results: Vec<ResultField> = vec![
+        ResultField::TxType(tx.inner.tx_type().into()),
+        ResultField::TxNonce(tx.nonce()),
+        ResultField::TxGasPrice(tx.gas_price().expect("Legacy tx should have this")),
+        ResultField::TxGasLimit(tx.gas_limit()),
+        ResultField::EthAddress(tx.from), // Caller address
+        ResultField::EthAddress(tx.to().expect("Should be to field in contract call")), // Contract address in call
+        ResultField::TxValue(tx.value()),
+        ResultField::TxV(v),
+        ResultField::TxR(r),
+        ResultField::TxS(s),
+    ];
+
+    // Checking that all result data matches expected
+    check_results(expected_results, selected_offsets, raw.clone());
+}
+
+// Tx/Rx Fields queried in this test:
+// - Rx Status
+// - Rx Gas Used
+// - Rx Log Blooms
+#[tokio::test]
+async fn queried_receipt_fields_match_expected() {
+    // Get legacy transaction via rpc
+    let (tx, rx) = get_transaction_and_receipt(
+        "0xc990ce703dd3ca83429c302118f197651678de359c271f205b9083d4aa333aae",
+    )
+    .await;
+    assert!(tx.inner.is_legacy());
+
+    // Encode transaction
+    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+        .expect("creating queryable builder should work");
+    query_builder.set_abi_provider(Arc::new(|contract_address| {
+        Box::pin(my_abi_provider(contract_address.clone()))
+    }));
+
+    query_builder
+        .add_static_field(QueryableFields::RxStatus)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::RxGasUsed)
+        .unwrap();
+    query_builder
+        .add_static_field(QueryableFields::RxLogBlooms)
+        .unwrap();
+
+    let selected_offsets = query_builder.get_selected_offsets();
+    let raw = encoded.abi.clone();
+
+    let expected_results: Vec<ResultField> = vec![
+        ResultField::RxStatus(rx.status()),
+        ResultField::RxGasUsed(rx.gas_used),
+        ResultField::RxLogBlooms(rx.inner.logs_bloom().0.to_vec()),
+    ];
+
+    // Checking that all result data matches expected
+    check_results(expected_results, selected_offsets, raw.clone());
+}
+
+// Tx/Rx Fields queried in this test:
+// - Log 1 (Transfer event):
+//     - Event addr (contract addr)
+//     - Event index 0 (signature)
+//     - Event index 1 (from address)
+//     - Event index 2 (to, burn address)
+//     - Event data field 0 (burned amount)
+#[tokio::test]
+async fn event_builder_queried_fields_match_expected() {
+    // Get legacy transaction via rpc
+    let (tx, rx) = get_transaction_and_receipt(
+        "0xc990ce703dd3ca83429c302118f197651678de359c271f205b9083d4aa333aae",
+    )
+    .await;
+    assert!(tx.inner.is_legacy());
+
+    // Encode transaction
+    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+        .expect("creating queryable builder should work");
+    query_builder.set_abi_provider(Arc::new(|contract_address| {
+        Box::pin(my_abi_provider(contract_address.clone()))
+    }));
 
     // just to keep it simple for now
     // i'll just say i care about the event index 1
@@ -75,6 +179,47 @@ async fn legacy_tx_queried_fields_match_expected() {
         .await
         .expect("should have matched an event and constructed offsets");
 
+    let selected_offsets = query_builder.get_selected_offsets();
+    let raw = encoded.abi.clone();
+
+    let expected_results: Vec<ResultField> = vec![
+        ResultField::EthAddress(rx.inner.logs()[1].address()), // Contract address in event
+        ResultField::EventTopic(rx.inner.logs()[1].topic0().unwrap().0), // Event signature
+        ResultField::EventTopic(rx.inner.logs()[1].topics()[1].0), // Event from address
+        ResultField::EventTopic(rx.inner.logs()[1].topics()[2].0), // Event to address
+        ResultField::EventDataField(
+            rx.inner.logs()[1].data().data[..]
+                .try_into()
+                .expect("Data should contain 1 32 byte field for this transaction"),
+        ), // Event value
+    ];
+
+    // Checking that all result data matches expected
+    check_results(expected_results, selected_offsets, raw.clone());
+}
+
+// Tx/Rx Fields queried in this test:
+// - Call Data:
+//     - Function signature
+//     - data field 0 (burned amount)
+#[tokio::test]
+async fn function_builder_queried_fields_match_expected() {
+    // Get legacy transaction via rpc
+    let (tx, rx) = get_transaction_and_receipt(
+        "0xc990ce703dd3ca83429c302118f197651678de359c271f205b9083d4aa333aae",
+    )
+    .await;
+    assert!(tx.inner.is_legacy());
+
+    // Encode transaction
+    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+        .expect("creating queryable builder should work");
+    query_builder.set_abi_provider(Arc::new(|contract_address| {
+        Box::pin(my_abi_provider(contract_address.clone()))
+    }));
+
     query_builder
         .function_builder("burn".into(), |b| {
             b.add_signature()
@@ -90,18 +235,6 @@ async fn legacy_tx_queried_fields_match_expected() {
     let raw = encoded.abi.clone();
 
     let expected_results: Vec<ResultField> = vec![
-        ResultField::TransactionStatus(rx.status()),
-        ResultField::EthAddress(tx.from), // Caller address
-        ResultField::EthAddress(tx.to().expect("Should be to field in contract call")), // Contract address in call
-        ResultField::EthAddress(rx.inner.logs()[1].address()), // Contract address in event
-        ResultField::EventTopic(rx.inner.logs()[1].topic0().unwrap().0), // Event signature
-        ResultField::EventTopic(rx.inner.logs()[1].topics()[1].0), // Event from address
-        ResultField::EventTopic(rx.inner.logs()[1].topics()[2].0), // Event to address
-        ResultField::EventDataField(
-            rx.inner.logs()[1].data().data[..]
-                .try_into()
-                .expect("Data should contain 1 32 byte field for this transaction"),
-        ), // Event value
         ResultField::FunctionSignifier(
             tx.inner.as_legacy().unwrap().tx().input[0..4]
                 .try_into()
@@ -117,3 +250,15 @@ async fn legacy_tx_queried_fields_match_expected() {
     // Checking that all result data matches expected
     check_results(expected_results, selected_offsets, raw.clone());
 }
+
+#[tokio::test]
+async fn type_1_tx_queried_fields_match_expected() {}
+
+#[tokio::test]
+async fn type_2_tx_queried_fields_match_expected() {}
+
+#[tokio::test]
+async fn type_3_tx_queried_fields_match_expected() {}
+
+#[tokio::test]
+async fn type_4_tx_queried_fields_match_expected() {}

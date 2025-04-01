@@ -1,14 +1,26 @@
+use crate::encoding::common::compute_v;
+use alloy::consensus::Transaction as _;
 use alloy::rpc::types::eth::transaction::Transaction;
 use alloy::{
-    primitives::{Address, B256},
+    primitives::{Address, B256, U256},
     providers::{Provider, ProviderBuilder},
     rpc::types::TransactionReceipt,
 };
 use std::str::FromStr;
 
 pub enum ResultField {
-    TransactionStatus(bool),
+    TxType(u8),
+    TxNonce(u64),
+    TxGasPrice(u128),
+    TxGasLimit(u64),
     EthAddress(Address),
+    TxValue(U256),
+    TxV(U256),
+    TxR([u8; 32]),
+    TxS([u8; 32]),
+    RxStatus(bool),
+    RxGasUsed(u64),
+    RxLogBlooms(Vec<u8>),
     EventTopic([u8; 32]),
     EventDataField([u8; 32]),
     FunctionSignifier([u8; 4]),
@@ -49,16 +61,46 @@ pub fn check_results(
     {
         // Pad expected result according to type
         let expected_padded: Vec<u8> = match expected {
-            ResultField::TransactionStatus(status) => {
-                let mut status_padded: Vec<u8> = vec![0; 31];
-                status_padded.push(*status as u8);
-                status_padded
+            ResultField::TxType(tx_type) => {
+                let mut type_padded: Vec<u8> = vec![0; 31];
+                type_padded.push(*tx_type);
+                type_padded
+            }
+            ResultField::TxNonce(nonce) => {
+                let mut nonce_padded: Vec<u8> = vec![0; 24];
+                nonce_padded.append(&mut Vec::from(nonce.to_be_bytes()));
+                nonce_padded
+            }
+            ResultField::TxGasPrice(price) => {
+                let mut price_padded: Vec<u8> = vec![0; 16];
+                price_padded.append(&mut Vec::from(price.to_be_bytes()));
+                price_padded
+            }
+            ResultField::TxGasLimit(limit) => {
+                let mut limit_padded: Vec<u8> = vec![0; 24];
+                limit_padded.append(&mut Vec::from(limit.to_be_bytes()));
+                limit_padded
             }
             ResultField::EthAddress(address) => {
                 let mut address_padded: Vec<u8> = vec![0; 12];
                 address_padded.append(&mut Vec::from(address.0 .0));
                 address_padded
             }
+            ResultField::TxValue(value) => value.to_be_bytes_vec(),
+            ResultField::TxV(v) => v.to_be_bytes_vec(),
+            ResultField::TxR(r) => Vec::from(r),
+            ResultField::TxS(s) => Vec::from(s),
+            ResultField::RxStatus(status) => {
+                let mut status_padded: Vec<u8> = vec![0; 31];
+                status_padded.push(*status as u8);
+                status_padded
+            }
+            ResultField::RxGasUsed(gas_used) => {
+                let mut gas_used_padded: Vec<u8> = vec![0; 24];
+                gas_used_padded.append(&mut Vec::from(gas_used.to_be_bytes()));
+                gas_used_padded
+            }
+            ResultField::RxLogBlooms(blooms) => blooms.clone(),
             ResultField::EventTopic(topic) => Vec::from(topic),
             ResultField::EventDataField(field) => Vec::from(field),
             ResultField::FunctionSignifier(signifier) => Vec::from(signifier),
@@ -74,4 +116,17 @@ pub fn check_results(
             field_number, expected_padded, segment_bytes
         );
     }
+}
+
+pub fn get_vrs(tx: &Transaction) -> (U256, [u8; 32], [u8; 32]) {
+    let signed_tx = tx
+        .inner
+        .as_legacy()
+        .expect("Already checked that tx is legacy");
+    let signature = signed_tx.signature();
+    let chain_id = tx.chain_id();
+    let v = compute_v(signature, chain_id);
+    let r: [u8; 32] = signature.r().to_be_bytes::<32>()[0..32].try_into().unwrap();
+    let s: [u8; 32] = signature.s().to_be_bytes::<32>()[0..32].try_into().unwrap();
+    (v, r, s)
 }

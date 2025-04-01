@@ -12,8 +12,8 @@ fn get_mapped_fields_for_type0() -> Vec<(QueryableFields, DynSolType)> {
         ( QueryableFields::TxValue, DynSolType::Uint(256)),
         ( QueryableFields::TxData, DynSolType::Bytes),
         ( QueryableFields::TxV, DynSolType::Uint(256)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32))
+        ( QueryableFields::TxR, DynSolType::FixedBytes(32)),
+        ( QueryableFields::TxS, DynSolType::FixedBytes(32))
     ];
 }
 
@@ -37,8 +37,8 @@ fn get_mapped_fields_for_type1() -> Vec<(QueryableFields, DynSolType)> {
             )
         ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32))
+        ( QueryableFields::TxR, DynSolType::FixedBytes(32)),
+        ( QueryableFields::TxS, DynSolType::FixedBytes(32))
     ];
 }
 
@@ -64,8 +64,8 @@ fn get_mapped_fields_for_type2() -> Vec<(QueryableFields, DynSolType)> {
             )
         ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32))
+        ( QueryableFields::TxR, DynSolType::FixedBytes(32)),
+        ( QueryableFields::TxS, DynSolType::FixedBytes(32))
     ];
 }
 
@@ -92,8 +92,8 @@ fn get_mapped_fields_for_type3() -> Vec<(QueryableFields, DynSolType)>
             )
         ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32))
+        ( QueryableFields::TxR, DynSolType::FixedBytes(32)),
+        ( QueryableFields::TxS, DynSolType::FixedBytes(32))
     ];
 }
 
@@ -133,8 +133,8 @@ fn get_mapped_fields_for_type4() -> Vec<(QueryableFields, DynSolType)>
             ),
         ),
         ( QueryableFields::TxYParity, DynSolType::Uint(256)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32)),
-        ( QueryableFields::TxV, DynSolType::FixedBytes(32))
+        ( QueryableFields::TxR, DynSolType::FixedBytes(32)),
+        ( QueryableFields::TxS, DynSolType::FixedBytes(32))
     ];
 }
 
