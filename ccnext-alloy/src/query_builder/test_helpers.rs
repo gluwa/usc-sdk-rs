@@ -1,6 +1,7 @@
-use crate::encoding::common::compute_v;
+use crate::encoding::common::{compute_v, compute_y_parity};
 use alloy::consensus::Transaction as _;
 use alloy::rpc::types::eth::transaction::Transaction;
+use alloy::eips::eip2930::AccessList;
 use alloy::{
     primitives::{Address, B256, U256},
     providers::{Provider, ProviderBuilder},
@@ -10,15 +11,20 @@ use std::str::FromStr;
 
 pub enum ResultField {
     TxType(u8),
+    TxChainId(u64),
     TxNonce(u64),
     TxGasPrice(u128),
+    TxMaxPriorityFeePerGas(u128),
+    TxMaxFeePerGas(u128),
     TxGasLimit(u64),
     EthAddress(Address),
     TxValue(U256),
+    TxAccessList(AccessList),
     TxV(U256),
+    TxYParity(u8),
     TxR([u8; 32]),
     TxS([u8; 32]),
-    RxStatus(bool),
+    RxStatus(u8),
     RxGasUsed(u64),
     RxLogBlooms(Vec<u8>),
     EventTopic([u8; 32]),
@@ -61,25 +67,30 @@ pub fn check_results(
     {
         // Pad expected result according to type
         let expected_padded: Vec<u8> = match expected {
-            ResultField::TxType(tx_type) => {
-                let mut type_padded: Vec<u8> = vec![0; 31];
-                type_padded.push(*tx_type);
-                type_padded
+            // All cases where 1 byte is padded to 32 bytes
+            ResultField::TxType(value) |
+            ResultField::TxYParity(value) | 
+            ResultField::RxStatus(value) => {
+                let mut value_padded: Vec<u8> = vec![0; 31];
+                value_padded.push(*value);
+                value_padded
+            },
+            // All cases where 8 bytes are padded to 32 bytes
+            ResultField::RxGasUsed(value) |
+            ResultField::TxNonce(value) |
+            ResultField::TxChainId(value) |
+            ResultField::TxGasLimit(value) => {
+                let mut value_padded: Vec<u8> = vec![0; 24];
+                value_padded.append(&mut Vec::from(value.to_be_bytes()));
+                value_padded
             }
-            ResultField::TxNonce(nonce) => {
-                let mut nonce_padded: Vec<u8> = vec![0; 24];
-                nonce_padded.append(&mut Vec::from(nonce.to_be_bytes()));
-                nonce_padded
-            }
-            ResultField::TxGasPrice(price) => {
-                let mut price_padded: Vec<u8> = vec![0; 16];
-                price_padded.append(&mut Vec::from(price.to_be_bytes()));
-                price_padded
-            }
-            ResultField::TxGasLimit(limit) => {
-                let mut limit_padded: Vec<u8> = vec![0; 24];
-                limit_padded.append(&mut Vec::from(limit.to_be_bytes()));
-                limit_padded
+            // All cases where 16 bytes are padded to 32 bytes
+            ResultField::TxGasPrice(value) |
+            ResultField::TxMaxPriorityFeePerGas(value) | 
+            ResultField::TxMaxFeePerGas(value) => {
+                let mut value_padded: Vec<u8> = vec![0; 16];
+                value_padded.append(&mut Vec::from(value.to_be_bytes()));
+                value_padded
             }
             ResultField::EthAddress(address) => {
                 let mut address_padded: Vec<u8> = vec![0; 12];
@@ -87,19 +98,13 @@ pub fn check_results(
                 address_padded
             }
             ResultField::TxValue(value) => value.to_be_bytes_vec(),
+            ResultField::TxAccessList(list) => {
+                //TODO: figure out how access list should look when encoded
+                vec![] 
+            }
             ResultField::TxV(v) => v.to_be_bytes_vec(),
             ResultField::TxR(r) => Vec::from(r),
             ResultField::TxS(s) => Vec::from(s),
-            ResultField::RxStatus(status) => {
-                let mut status_padded: Vec<u8> = vec![0; 31];
-                status_padded.push(*status as u8);
-                status_padded
-            }
-            ResultField::RxGasUsed(gas_used) => {
-                let mut gas_used_padded: Vec<u8> = vec![0; 24];
-                gas_used_padded.append(&mut Vec::from(gas_used.to_be_bytes()));
-                gas_used_padded
-            }
             ResultField::RxLogBlooms(blooms) => blooms.clone(),
             ResultField::EventTopic(topic) => Vec::from(topic),
             ResultField::EventDataField(field) => Vec::from(field),
@@ -129,4 +134,11 @@ pub fn get_vrs(tx: &Transaction) -> (U256, [u8; 32], [u8; 32]) {
     let r: [u8; 32] = signature.r().to_be_bytes::<32>()[0..32].try_into().unwrap();
     let s: [u8; 32] = signature.s().to_be_bytes::<32>()[0..32].try_into().unwrap();
     (v, r, s)
+}
+
+pub fn get_y_parity(tx: &Transaction) -> u8 {
+    let signature = tx
+        .inner
+        .signature();
+    compute_y_parity(signature)
 }
