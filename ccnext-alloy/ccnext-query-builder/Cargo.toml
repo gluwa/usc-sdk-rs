@@ -1,19 +1,12 @@
-[workspace]
-members = [
-    "ccnext-abi-encoding",
-    "ccnext-query-builder",
-]
-resolver = "2"
-
-[workspace.package]
-name = "ccnext-alloy"
-version = "0.1.0"
-license = "Unlicense"
+[package]
 edition = "2021"
+license = "Unlicense"
+name = "ccnext-query-builder"
+publish = true
+version = "0.1.0"
+description = "Query builder library. Used for the construction of ccnext proving queries."
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[workspace.dependencies]
+[dependencies]
 alloy = { version = "0.11", features = [
     "node-bindings",
     "providers",
@@ -34,4 +27,4 @@ hex = "0.4"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-ccnext-abi-encoding = { path = "ccnext-abi-encoding", default-features = false }
+ccnext-abi-encoding = { version = "0.1" }

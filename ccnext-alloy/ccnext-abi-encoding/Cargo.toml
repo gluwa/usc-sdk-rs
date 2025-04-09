@@ -1,19 +1,12 @@
-[workspace]
-members = [
-    "ccnext-abi-encoding",
-    "ccnext-query-builder",
-]
-resolver = "2"
-
-[workspace.package]
-name = "ccnext-alloy"
-version = "0.1.0"
-license = "Unlicense"
+[package]
 edition = "2021"
+license = "Unlicense"
+name = "ccnext-abi-encoding"
+publish = true
+version = "0.1.0"
+description = "ABI encoding library intended for use with the ccnext project."
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[workspace.dependencies]
+[dependencies]
 alloy = { version = "0.11", features = [
     "node-bindings",
     "providers",
@@ -34,4 +27,3 @@ hex = "0.4"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-ccnext-abi-encoding = { path = "ccnext-abi-encoding", default-features = false }

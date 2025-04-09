@@ -1,4 +1,4 @@
-use crate::encoding::common::{compute_v, compute_y_parity};
+use ccnext_abi_encoding::common::{compute_v, compute_y_parity};
 use alloy::consensus::Transaction as _;
 use alloy::rpc::types::eth::transaction::Transaction;
 use alloy::eips::eip2930::AccessList;
@@ -98,7 +98,7 @@ pub fn check_results(
                 address_padded
             }
             ResultField::TxValue(value) => value.to_be_bytes_vec(),
-            ResultField::TxAccessList(list) => {
+            ResultField::TxAccessList(_list) => {
                 //TODO: figure out how access list should look when encoded
                 vec![] 
             }

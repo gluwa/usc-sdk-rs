@@ -1,10 +1,7 @@
 use std::{any::Any, fmt::format, fs::File, io::Write, str::FromStr, sync::Arc};
 use alloy::{dyn_abi::{DynSolType, DynSolValue}, eips::BlockId, primitives::{Address, B256, U256}, providers::{Provider, ProviderBuilder}, rpc::types::{BlockTransactionsKind}};
-use encoding::abi::abi_encode;
-use query_builder::abi::{abi_encoding_mapping::get_all_fields_for_transaction, models::{FieldMetadata, QueryableFields}, query_builder::QueryBuilder, utils::compute_abi_offsets};
-
-mod encoding;
-mod query_builder;
+use ccnext_abi_encoding::abi::abi_encode;
+use ccnext_query_builder::abi::{abi_encoding_mapping::get_all_fields_for_transaction, models::{FieldMetadata, QueryableFields}, query_builder::QueryBuilder, utils::compute_abi_offsets};
 
 async fn _encode_transaction() -> Result<(), Box<dyn std::error::Error>> {
 
