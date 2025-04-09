@@ -98,7 +98,7 @@ pub fn check_results(
                 address_padded
             }
             ResultField::TxValue(value) => value.to_be_bytes_vec(),
-            ResultField::TxAccessList(list) => {
+            ResultField::TxAccessList(_list) => {
                 //TODO: figure out how access list should look when encoded
                 vec![] 
             }

@@ -1,5 +1,3 @@
-use core::num;
-
 use alloy::{dyn_abi::{Decoder, DynSolType}, sol_types::Error};
 
 use super::models::FieldMetadata;

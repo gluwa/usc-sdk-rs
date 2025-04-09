@@ -1,8 +1,7 @@
-use std::{collections::HashMap, future::Future, hash::Hash, io::Read, pin::Pin, sync::Arc};
+use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc};
 
-use alloy::{consensus::Transaction as _, dyn_abi::{DecodedEvent, DynSolType, EventExt}, hex::FromHex, json_abi::JsonAbi, primitives::{map::HashSet, FixedBytes, B256}, rpc::types::{Log, Transaction, TransactionReceipt}};
+use alloy::{consensus::Transaction as _, dyn_abi::{DecodedEvent, DynSolType, EventExt}, hex::FromHex, json_abi::JsonAbi, primitives::{map::HashSet, FixedBytes}, rpc::types::{Log, Transaction, TransactionReceipt}};
 use alloy_json_abi::{Event, Function};
-use serde::de;
 
 use crate::abi::{models::{FieldMetadata, QueryableFields}, query_builder_for_function::QueryBuilderForFunction};
 use ccnext_abi_encoding::abi::abi_encode;
@@ -14,7 +13,7 @@ pub struct QueryBuilder {
     tx: Transaction,
     rx: TransactionReceipt,
     abi_provider: Option<AsyncAbiResolverCallback>,
-    computed_offsets: Vec<FieldMetadata>,
+    _computed_offsets: Vec<FieldMetadata>,
     mapped_offsets: HashMap<QueryableFields, FieldMetadata>,
     selected_offsets: Vec<(usize, usize)>,
     abi_cache: HashMap<String, JsonAbi>
@@ -83,7 +82,7 @@ impl QueryBuilder {
             rx,
             abi_provider: None,
             mapped_offsets,
-            computed_offsets: computed_offsets.clone(),
+            _computed_offsets: computed_offsets.clone(),
             selected_offsets: vec![],
             abi_cache: HashMap::new()
         })
