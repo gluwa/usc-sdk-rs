@@ -7,7 +7,7 @@ version = "0.1.0"
 description = "Query builder library. Used for the construction of ccnext proving queries."
 
 [dependencies]
-alloy = { workspace = true, features = [
+alloy = { version = "0.11", features = [
     "node-bindings",
     "providers",
     "provider-http",
@@ -21,10 +21,10 @@ alloy = { workspace = true, features = [
     "sol-types",
     "signers"
 ] }
-alloy-json-abi = { workspace = true, features = ["serde_json"] }
-tokio = { workspace = true, features = ["full"] }
-hex = { workspace = true }
-thiserror = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+alloy-json-abi = { version = "0.8.23", features = ["serde_json"] }
+tokio = { version = "1", features = ["full"] }
+hex = "0.4"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 ccnext-abi-encoding = { workspace = true }
