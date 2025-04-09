@@ -4,6 +4,7 @@ license = "Unlicense"
 name = "ccnext-abi-encoding"
 publish = true
 version = "0.1.0"
+description = "ABI encoding library intended for use with the ccnext project."
 
 [dependencies]
 alloy = { workspace = true, features = [
