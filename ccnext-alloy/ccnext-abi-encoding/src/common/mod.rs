@@ -1,7 +1,5 @@
 use alloy::dyn_abi::DynSolValue;
-use alloy::eips::eip7702::SignedAuthorization;
 use alloy::primitives::{FixedBytes, U256};
-use alloy::rpc::types::AccessListItem;
 use alloy::signers::Signature;
 use serde::{Deserialize, Serialize};
 
