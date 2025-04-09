@@ -1,7 +1,7 @@
 use alloy::{consensus::Transaction as _, dyn_abi::Specifier, rpc::types::Transaction};
 use alloy_json_abi::Function;
 
-use crate::query_builder::abi::utils::compute_abi_offsets;
+use crate::abi::utils::compute_abi_offsets;
 
 use super::models::{FieldMetadata, QueryBuilderError};
 

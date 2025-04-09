@@ -4,8 +4,8 @@ use alloy::{consensus::Transaction as _, dyn_abi::{DecodedEvent, DynSolType, Eve
 use alloy_json_abi::{Event, Function};
 use serde::de;
 
-use crate::{encoding::abi::abi_encode, query_builder::abi::{models::{FieldMetadata, QueryableFields}, query_builder_for_function::QueryBuilderForFunction}};
-
+use crate::abi::{models::{FieldMetadata, QueryableFields}, query_builder_for_function::QueryBuilderForFunction};
+use ccnext_abi_encoding::abi::abi_encode;
 use super::{abi_encoding_mapping::get_all_fields_for_transaction, models::QueryBuilderError, query_builder_for_event::QueryBuilderForEvent, utils::compute_abi_offsets};
 
 type AsyncAbiResolverCallback = Arc<dyn Fn(String) -> Pin<Box<dyn Future<Output = Option<String>> + Send>> + Send + Sync>;
@@ -64,6 +64,9 @@ impl QueryBuilder {
             }
         };
 
+        // TODO: Make sure this passes with various transactions. Doesn't intutitively feel like this should work
+        // in all cases as currently written, since `compute_abi_offsets` recursively adds children while 
+        // `get_all_fields_for_transaction` doesn't.
         if computed_offsets.len() != field_and_types.len() {
             return Err(QueryBuilderError::MissMatchedLengthDecoding);
         }
@@ -112,6 +115,7 @@ impl QueryBuilder {
 
         let abi = self.get_abi_from_provider_cached(contract_address.to_string()).await?;
         let matched_function: &Function;
+        // If signature, then we can get function without ambiguity
         if name_or_signature.starts_with("0x") {
             
             let name_of_signature_bytes = match self::hex_to_4_bytes(name_or_signature.as_str()) {
@@ -126,7 +130,8 @@ impl QueryBuilder {
 
         } else {
 
-            // could not find so find functions by name..
+            // If name was passed, then we get the function with that name. For now, we error out when
+            // multiple functions are found with the same name.
             matched_function = match abi.function(&name_or_signature) {
                 Some(functions) => {
                     if functions.len() > 1 {

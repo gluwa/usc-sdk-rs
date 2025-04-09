@@ -1,4 +1,4 @@
-use crate::encoding::common::{compute_v, compute_y_parity};
+use ccnext_abi_encoding::common::{compute_v, compute_y_parity};
 use alloy::consensus::Transaction as _;
 use alloy::rpc::types::eth::transaction::Transaction;
 use alloy::eips::eip2930::AccessList;

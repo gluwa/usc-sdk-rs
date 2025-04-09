@@ -12,8 +12,6 @@ pub enum ComputeAbiOffsetsError {
 }
 
 pub fn compute_abi_offsets(types: Vec<DynSolType>, abi: Vec<u8>) -> Result<Vec<FieldMetadata>, ComputeAbiOffsetsError>{
-
-    let single_type = DynSolType::Tuple(types.clone());
     let mut reader = Decoder::new(&abi, false); 
 
     match decode_offset_recursive(&mut reader, types, 0) 
@@ -76,6 +74,8 @@ fn decode_offset_recursive(reader: &mut Decoder, types: Vec<DynSolType>, base_of
 
                 // this can probably be a function on its own D:
                 let array_components: Vec<DynSolType> = match array_element_sol_type_unboxed.clone() {
+                    // Likely a bug. We would want to add `dyn_sol_types` repeatedly for 0..number_of_elements.
+                    // It's fine for the number of array_components to end up larger than the number_of_elements.
                     DynSolType::Tuple(dyn_sol_types) => dyn_sol_types,
                     other => {
                         let mut types = Vec::new();
@@ -144,6 +144,7 @@ fn decode_offset_recursive(reader: &mut Decoder, types: Vec<DynSolType>, base_of
 
                 // this can probably be a function on its own D:
                 let array_components: Vec<DynSolType> = match array_element_sol_type_unboxed.clone() {
+                    // Maybe same issue here as noted in Array case
                     DynSolType::Tuple(dyn_sol_types) => dyn_sol_types,
                     other => {
                         let mut types = Vec::new();
