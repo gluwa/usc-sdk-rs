@@ -1,11 +1,10 @@
 use ccnext_abi_encoding::abi::abi_encode;
 use crate::{
     {abi::{models::QueryableFields, query_builder::QueryBuilder}, test_helpers::{
-        check_results, get_transaction_and_receipt, get_vrs, get_y_parity, ResultField
+        check_results, get_transaction_and_receipt, get_vrs, get_y_parity, ResultField, TestAbiProvider,
     }},
 };
 use alloy::consensus::Transaction;
-use std::sync::Arc;
 
 // Tx/Rx Fields queried in this test: All legacy (type 0) fields except Tx Data
 // See abi_encoding_mapping.rs for details
@@ -23,9 +22,7 @@ async fn legacy_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .add_static_field(QueryableFields::Type)
@@ -98,9 +95,7 @@ async fn queried_receipt_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .add_static_field(QueryableFields::RxStatus)
@@ -145,9 +140,7 @@ async fn event_builder_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     // just to keep it simple for now
     // i'll just say i care about the event index 1
@@ -213,9 +206,7 @@ async fn function_builder_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .function_builder("burn".into(), |b| {
@@ -265,9 +256,7 @@ async fn type_1_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .add_static_field(QueryableFields::TxChainId)
@@ -306,9 +295,7 @@ async fn type_2_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .add_static_field(QueryableFields::TxMaxPriorityFeePerGas)
@@ -352,9 +339,7 @@ async fn type_3_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     query_builder
         .add_static_field(QueryableFields::TxMaxPriorityFeePerGas)
@@ -389,9 +374,7 @@ async fn type_4_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Arc::new(|contract_address| {
-        Box::pin(test_abi_provider(contract_address.clone()))
-    }));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
     //query_builder
     //    .add_static_field(QueryableFields::TxAuthorizationList)
@@ -407,12 +390,4 @@ async fn type_4_tx_queried_fields_match_expected() {
 
     // Checking that all result data matches expected
     check_results(expected_results, selected_offsets, raw.clone());
-}
-
-async fn test_abi_provider(_contract_address: String) -> Option<String> {
-
-    // hard coded G-CRE's ABI
-    let json_str = r#"[{"constant":false,"inputs":[{"name":"tokenHolders","type":"address[]"},{"name":"amounts","type":"uint256[]"}],"name":"recordSales730Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"VestingStartDate","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"amount","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf365Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"value","type":"uint256"},{"name":"sighash","type":"string"}],"name":"exchange","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"from","type":"address"},{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf183Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolders","type":"address[]"},{"name":"amounts","type":"uint256[]"}],"name":"recordSales1095Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf365Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"value","type":"uint256"}],"name":"burn","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf2190Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolders","type":"address[]"},{"name":"amounts","type":"uint256[]"}],"name":"recordSales183Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolder","type":"address"},{"name":"numCoins","type":"uint256"}],"name":"recordSale365Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf730Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"finalizeSales","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"from","type":"address"},{"name":"value","type":"uint256"}],"name":"burnFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf2190Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf730Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolder","type":"address"},{"name":"numCoins","type":"uint256"}],"name":"recordSale183Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"creditcoinSalesLimit","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"vestedBalanceOf1095Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"creditcoinLimitInFrac","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolder","type":"address"},{"name":"numCoins","type":"uint256"}],"name":"recordSale2190Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolder","type":"address"},{"name":"numCoins","type":"uint256"}],"name":"recordSale730Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf1095Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"startVesting","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolders","type":"address[]"},{"name":"amounts","type":"uint256[]"}],"name":"recordSales2190Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"tokenHolder","type":"address"}],"name":"purchasedBalanceOf183Days","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"IsSalesFinalized","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolders","type":"address[]"},{"name":"amounts","type":"uint256[]"}],"name":"recordSales365Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"tokenHolder","type":"address"},{"name":"numCoins","type":"uint256"}],"name":"recordSale1095Days","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"creditcoinFoundation","type":"address"},{"name":"devCost","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"},{"indexed":true,"name":"sighash","type":"string"}],"name":"Exchange","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Burnt","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"}]"#;
-
-    Some(json_str.into())
 }

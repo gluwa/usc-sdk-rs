@@ -1,18 +1,22 @@
-use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc};
+use std::collections::HashMap;
 
 use alloy::{consensus::Transaction as _, dyn_abi::{DecodedEvent, DynSolType, EventExt}, hex::FromHex, json_abi::JsonAbi, primitives::{map::HashSet, FixedBytes}, rpc::types::{Log, Transaction, TransactionReceipt}};
 use alloy_json_abi::{Event, Function};
+use async_trait::async_trait;
 
 use crate::abi::{models::{FieldMetadata, QueryableFields}, query_builder_for_function::QueryBuilderForFunction};
 use ccnext_abi_encoding::abi::abi_encode;
 use super::{abi_encoding_mapping::get_all_fields_for_transaction, models::QueryBuilderError, query_builder_for_event::QueryBuilderForEvent, utils::compute_abi_offsets};
 
-type AsyncAbiResolverCallback = Arc<dyn Fn(String) -> Pin<Box<dyn Future<Output = Option<String>> + Send>> + Send + Sync>;
+#[async_trait]
+pub trait AbiProvider {
+    async fn get_abi(&self, contract_address: String) -> Option<String>;
+}
 
 pub struct QueryBuilder {
     tx: Transaction,
     rx: TransactionReceipt,
-    abi_provider: Option<AsyncAbiResolverCallback>,
+    abi_provider: Option<Box<dyn AbiProvider>>,
     _computed_offsets: Vec<FieldMetadata>,
     mapped_offsets: HashMap<QueryableFields, FieldMetadata>,
     selected_offsets: Vec<(usize, usize)>,
@@ -88,7 +92,7 @@ impl QueryBuilder {
         })
     }
 
-    pub fn set_abi_provider(&mut self, abi_provider: AsyncAbiResolverCallback) {
+    pub fn set_abi_provider(&mut self, abi_provider: Box<dyn AbiProvider>) {
         self.abi_provider = Some(abi_provider);
     }
 
@@ -429,7 +433,7 @@ impl QueryBuilder {
             None => return Err(QueryBuilderError::AbiProviderNotInitialized)
         };
  
-        let abi_raw = match abi_provider(contract_address.clone()).await {
+        let abi_raw = match abi_provider.get_abi(contract_address.clone()).await {
             Some(json_string) => {
                 json_string
             },
