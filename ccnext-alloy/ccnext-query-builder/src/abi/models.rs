@@ -49,6 +49,10 @@ pub enum QueryBuilderError {
     FunctionSignatureNameProvidedIsNotValidHex,
     AbiProviderNotInitialized,
     NoAbiFoundForContract(String),
+    ContractAbiRetrievalFailed {
+        contract_addr: String,
+        error_message: String,
+    },
     FailedToParseAbi(String, String),
     FailedToFindEventByNameOrSignature(String),
     FailedToDecodeLog(Log),

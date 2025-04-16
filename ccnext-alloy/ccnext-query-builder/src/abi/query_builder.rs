@@ -10,7 +10,7 @@ use super::{abi_encoding_mapping::get_all_fields_for_transaction, models::QueryB
 
 #[async_trait]
 pub trait AbiProvider {
-    async fn get_abi(&self, contract_address: String) -> Option<String>;
+    async fn get_abi(&self, contract_address: String) -> Result<String, QueryBuilderError>;
 }
 
 pub struct QueryBuilder {
@@ -433,14 +433,7 @@ impl QueryBuilder {
             None => return Err(QueryBuilderError::AbiProviderNotInitialized)
         };
  
-        let abi_raw = match abi_provider.get_abi(contract_address.clone()).await {
-            Some(json_string) => {
-                json_string
-            },
-            None => {
-                return Err(QueryBuilderError::NoAbiFoundForContract(contract_address.clone()));
-            } 
-        };
+        let abi_raw = abi_provider.get_abi(contract_address.clone()).await?;
 
         match JsonAbi::from_json_str(&abi_raw) {
             Ok(json_abi) => Ok(json_abi),
