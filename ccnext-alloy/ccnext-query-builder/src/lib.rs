@@ -1,5 +1,4 @@
 pub mod abi;
+pub mod test_helpers;
 #[cfg(test)]
 pub mod tests;
-#[cfg(test)]
-pub mod test_helpers;
