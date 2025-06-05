@@ -219,10 +219,11 @@ impl QueryBuilder {
     pub async fn event_builder(&mut self, 
         event_name_or_signature: String, 
         filter: fn(Log, DecodedEvent, usize) -> bool,
-        configurator: fn(&mut QueryBuilderForEvent) -> Result<(), QueryBuilderError>
+        take_first_if_multiple: bool,
+        configurator: fn(&mut QueryBuilderForEvent) -> Result<(), QueryBuilderError>,
     ) -> Result<&mut Self, QueryBuilderError> {
 
-        let (log, decoded_event, log_index, event) = match self.find_event(event_name_or_signature.clone(), filter).await? {
+        let (log, decoded_event, log_index, event) = match self.find_event(event_name_or_signature.clone(), filter, take_first_if_multiple).await? {
             Some(m) => {
                 m
             },
@@ -252,7 +253,7 @@ impl QueryBuilder {
         Ok(self)
     }
 
-    pub async fn find_event(&mut self, event_name_or_signature: String, filter: fn(Log, DecodedEvent, usize) -> bool) -> Result<Option<(Log, DecodedEvent, usize, Event)>, QueryBuilderError> {
+    pub async fn find_event(&mut self, event_name_or_signature: String, filter: fn(Log, DecodedEvent, usize) -> bool, take_first_if_multiple: bool) -> Result<Option<(Log, DecodedEvent, usize, Event)>, QueryBuilderError> {
         let events = self.find_all_events(event_name_or_signature.clone(), filter).await?;
         if events.len() == 0 {
             Ok(None)
@@ -260,7 +261,12 @@ impl QueryBuilder {
             let first_element = events.get(0).unwrap();
             Ok(Some(first_element.clone()))
         } else {
-            Err(QueryBuilderError::AmbigiousEventMatch(event_name_or_signature))
+            if take_first_if_multiple {
+                let first_element = events.get(0).unwrap();
+                Ok(Some(first_element.clone()))
+            } else {
+                Err(QueryBuilderError::AmbigiousEventMatch(event_name_or_signature))
+            }
         }
     }
     

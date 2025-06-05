@@ -149,6 +149,7 @@ async fn event_builder_queried_fields_match_expected() {
         .event_builder(
             "Transfer".into(),
             |_log, _event, log_index| log_index == 1,
+            false, // We only want the transfer at log index 1. There has been a catastrophic error if we find more than one log at that index
             |builder| {
                 // fun no? :)
                 builder
