@@ -124,7 +124,7 @@ export class QueryBuilder {
     {
         const match = await this.findEvent(eventNameOrSignature, filter);
         if (!match) 
-            throw new Error(`could not find an event`);
+            throw new Error(`Could not find event with name or signature: ${eventNameOrSignature}`);
 
         // okay now we know where to find it..
         const logs = this.mappedOffsets.get(QueryableFields.RxLogs);
