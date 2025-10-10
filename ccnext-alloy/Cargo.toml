@@ -1,17 +1,11 @@
 [workspace]
-members = [
-    "ccnext-abi-encoding",
-    "ccnext-query-builder",
-]
+members = ["ccnext-abi-encoding", "ccnext-query-builder"]
 resolver = "2"
 
 [workspace.package]
-name = "ccnext-alloy"
-version = "0.1.0"
+version = "0.2.0"
 license = "Unlicense"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
 alloy = { version = "0.11", features = [
@@ -26,12 +20,14 @@ alloy = { version = "0.11", features = [
     "rlp",
     "contract",
     "sol-types",
-    "signers"
+    "signers",
 ] }
-alloy-json-abi = { version = "0.8.23", features = ["serde_json"] }
-tokio = { version = "1", features = ["full"] }
-hex = "0.4"
-thiserror = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-ccnext-abi-encoding = { path = "ccnext-abi-encoding", default-features = false }
+alloy-json-abi = { version = "0.8.23" }
+tokio = { version = "1" }
+hex = { version = "0.4" }
+thiserror = { version = "1.0" }
+# Pinned to avoid issues with alloy
+serde = { version = "=1.0.220" }
+serde_json = { version = "1.0" }
+
+ccnext-abi-encoding = { path = "ccnext-abi-encoding" }

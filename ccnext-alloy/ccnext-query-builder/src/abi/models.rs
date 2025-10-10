@@ -8,7 +8,7 @@ pub struct FieldMetadata {
     pub size: Option<usize>,
     pub is_dynamic: bool,
     pub value: Option<Vec<u8>>,
-    pub children: Vec<FieldMetadata> 
+    pub children: Vec<FieldMetadata>,
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -35,7 +35,7 @@ pub enum QueryableFields {
     RxGasUsed,
     RxLogBlooms,
     RxLogs,
-    TxSignedAuthorizations
+    TxSignedAuthorizations,
 }
 
 #[derive(Debug)]
@@ -55,14 +55,14 @@ pub enum QueryBuilderError {
     },
     FailedToParseAbi(String, String),
     FailedToFindEventByNameOrSignature(String),
-    FailedToDecodeLog(Log),
+    FailedToDecodeLog(Box<Log>),
     AmbigiousEventMatch(String),
     FailedToFindRxLogsField,
     FailedToFindTxDataField,
     MissingLogInAbiOffsets(usize),
     MissingDataInAbiOffsets,
     TryingToGetSizeOfDynamicType,
-    FailedToGetEventDataOffsets(Log),
+    FailedToGetEventDataOffsets(Box<Log>),
     RequestingFunctionArgumentOfAnEmptyCalldataTransaction,
     RequestingFunctionArgumentButNoToAddressPresent,
     FailedToFindFunctionByNameOrSignature(String),
@@ -73,5 +73,5 @@ pub enum QueryBuilderError {
     FailedToResolveSolTypesOfMatchedFunction(Function),
     FailedToResolveSolTypesOfMatchedEvent(Event),
     FailedToComputeOffsetsForCalldata,
-    MissingDataInCalldataOffsets
+    MissingDataInCalldataOffsets,
 }

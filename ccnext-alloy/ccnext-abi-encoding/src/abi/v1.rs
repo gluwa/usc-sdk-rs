@@ -1,4 +1,4 @@
-use super::common::{compute_v, compute_y_parity, encode_blob_hashes, AbiEncodeResult};
+use crate::common::{compute_v, compute_y_parity, encode_blob_hashes};
 use alloy::{
     consensus::{
         Signed, Transaction as ConsensusTransaction, TxEip1559, TxEip2930, TxEip4844Variant,
@@ -7,27 +7,10 @@ use alloy::{
     dyn_abi::DynSolValue,
     eips::eip7702::SignedAuthorization,
     primitives::{Address, B256, U256},
-    rpc::types::{AccessListItem, Transaction, TransactionReceipt},
+    rpc::types::{AccessListItem, Transaction},
 };
 
-fn insert_separator(values: Vec<DynSolValue>) -> Vec<DynSolValue> {
-    let mut new_values = Vec::with_capacity(values.len() * 2 - 1);
-    let separator = DynSolValue::Uint(U256::from(0), 8);
-    let values_length = values.len();
-    for (i, value) in values.into_iter().enumerate() {
-        new_values.push(value);
-        if i < values_length - 1 {
-            new_values.push(separator.clone());
-        }
-    }
-
-    new_values
-}
-
-pub fn safe_encode_transaction_type_0(
-    tx: Transaction,
-    signed_tx: Signed<TxLegacy>,
-) -> Vec<DynSolValue> {
+pub fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Vec<DynSolValue> {
     // Extract transaction fields
     let signature = signed_tx.signature();
     let chain_id = tx.chain_id();
@@ -47,17 +30,17 @@ pub fn safe_encode_transaction_type_0(
         DynSolValue::FixedBytes(B256::from(signature.s()), 32), // s
     ];
 
-    insert_separator(values)
+    values
 }
 
-pub fn safe_encode_transaction_type_1(
+pub fn encode_transaction_type_1(
     tx: Transaction,
     signed_tx: Signed<TxEip2930>,
 ) -> Vec<DynSolValue> {
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity: u8 = compute_y_parity(signature);
-    let access_list = safe_encode_access_list(signed_tx.tx().access_list.0.clone());
+    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(1), 8), // Transaction type 1
@@ -75,17 +58,17 @@ pub fn safe_encode_transaction_type_1(
         DynSolValue::FixedBytes(B256::from(signature.s()), 32), // s
     ];
 
-    insert_separator(values)
+    values
 }
 
-pub fn safe_encode_transaction_type_2(
+pub fn encode_transaction_type_2(
     tx: Transaction,
     signed_tx: Signed<TxEip1559>,
 ) -> Vec<DynSolValue> {
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity = compute_y_parity(signature);
-    let access_list = safe_encode_access_list(signed_tx.tx().access_list.0.clone());
+    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(2), 8),
@@ -104,24 +87,10 @@ pub fn safe_encode_transaction_type_2(
         DynSolValue::FixedBytes(B256::from(signature.s()), 32),
     ];
 
-    insert_separator(values)
+    values
 }
 
-/*
-function getFieldsForType3(tx: TransactionResponse): EncodedFields {
-  const out = {
-    types: [
-      "uint8", "uint256", "uint256", "uint256", "uint256", "uint256", "address", "address", "uint256", "bytes", "tuple(address,uint256[])[]", "uint256", "bytes32[]", "uint8", "bytes32", "bytes32"
-    ],
-    values: [
-      tx.type, tx.chainId, tx.nonce, tx.maxPriorityFeePerGas, tx.maxFeePerGas, tx.gasLimit, tx.from, addressOrZero(tx.to), tx.value, tx.data, encodeAccessList(tx.accessList), tx.maxFeePerBlobGas, tx.blobVersionedHashes, tx.signature.yParity, tx.signature.r, tx.signature.s
-    ]
-  };
-
-  return out;
-}
-   */
-pub fn safe_encode_transaction_type_3(
+pub fn encode_transaction_type_3(
     tx: Transaction,
     signed_tx: Signed<TxEip4844Variant>,
 ) -> Vec<DynSolValue> {
@@ -133,7 +102,7 @@ pub fn safe_encode_transaction_type_3(
         Some(access_list) => access_list.0.clone(),
         None => Vec::new(),
     };
-    let access_list = safe_encode_access_list(access_list_item_vector);
+    let access_list = encode_access_list(access_list_item_vector);
     let blob_version_hashes = tx.blob_versioned_hashes().unwrap_or_default();
     let blob_hashes = encode_blob_hashes(blob_version_hashes.to_vec());
 
@@ -163,41 +132,18 @@ pub fn safe_encode_transaction_type_3(
         DynSolValue::FixedBytes(B256::from(signature.s()), 32),
     ];
 
-    insert_separator(values)
+    values
 }
 
-pub fn safe_encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
-    let mut list = Vec::new();
-    for access_list_item in access_list {
-        let mut storage_keys = Vec::new();
-        for storage_item in access_list_item.storage_keys {
-            storage_keys.push(DynSolValue::FixedBytes(storage_item, 32));
-        }
-
-        let values = vec![
-            DynSolValue::Address(access_list_item.address), // Address
-            DynSolValue::Array(storage_keys),
-        ];
-        let safe_values = insert_separator(values);
-        let access_list_tuple = DynSolValue::Tuple(safe_values);
-        let access_list_as_bytes = access_list_tuple.abi_encode_packed();
-        list.push(DynSolValue::Bytes(access_list_as_bytes));
-    }
-
-    // Wrap into `DynSolValue::Array`
-    DynSolValue::Array(list)
-}
-
-pub fn safe_encode_transaction_type_4(
+pub fn encode_transaction_type_4(
     tx: Transaction,
     signed_tx: Signed<TxEip7702>,
 ) -> Vec<DynSolValue> {
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity = compute_y_parity(signature);
-    let access_list = safe_encode_access_list(signed_tx.tx().access_list.0.clone());
-    let authorization_list =
-        safe_encode_authorization_list(signed_tx.tx().authorization_list.clone());
+    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
+    let authorization_list = encode_authorization_list(signed_tx.tx().authorization_list.clone());
 
     // it seems its possible that chain id isn't set for some reason?
     // if its a side car blob transaction.
@@ -221,118 +167,55 @@ pub fn safe_encode_transaction_type_4(
         DynSolValue::FixedBytes(B256::from(signature.s()), 32),
     ];
 
-    insert_separator(values)
+    values
 }
 
-// fn encode_other(_tx: Transaction) -> Vec<DynSolValue> {
-//     todo!("must implement in case a fork upgrade of ethereum happens, we don't want to be stuck")
-// }
+pub fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
+    match tx.inner.clone() {
+        TxEnvelope::Legacy(signed_tx) => encode_transaction_type_0(tx, signed_tx),
+        TxEnvelope::Eip2930(signed_tx) => encode_transaction_type_1(tx, signed_tx),
+        TxEnvelope::Eip1559(signed_tx) => encode_transaction_type_2(tx, signed_tx),
+        TxEnvelope::Eip4844(signed_tx) => encode_transaction_type_3(tx, signed_tx),
+        TxEnvelope::Eip7702(signed_tx) => encode_transaction_type_4(tx, signed_tx),
+    }
+}
 
-pub fn safe_encode_authorization_list(
-    signed_authorizations: Vec<SignedAuthorization>,
-) -> DynSolValue {
+pub fn encode_authorization_list(signed_authorizations: Vec<SignedAuthorization>) -> DynSolValue {
     let mut result = Vec::new();
     for signed_authorization in signed_authorizations {
-        let values = vec![
+        let signed_authorization_tuple = DynSolValue::Tuple(vec![
             DynSolValue::Uint(U256::from(*signed_authorization.chain_id()), 256),
             DynSolValue::Address(*signed_authorization.address()),
             DynSolValue::Uint(U256::from(signed_authorization.nonce()), 64),
             DynSolValue::Uint(U256::from(signed_authorization.y_parity()), 8),
             DynSolValue::Uint(U256::from(signed_authorization.r()), 256),
             DynSolValue::Uint(U256::from(signed_authorization.s()), 256),
-        ];
+        ]);
 
-        let safe_values = insert_separator(values);
-        let signed_authorization_tuple = DynSolValue::Tuple(safe_values);
-        let pack_encoded = signed_authorization_tuple.abi_encode_packed();
-        result.push(DynSolValue::Bytes(pack_encoded));
+        //let pack_encoded = signed_authorization_tuple.abi_encode_packed();
+        result.push(signed_authorization_tuple);
     }
 
     DynSolValue::Array(result)
 }
 
-pub fn safe_encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
-    match tx.inner.clone() {
-        TxEnvelope::Legacy(signed_tx) => safe_encode_transaction_type_0(tx, signed_tx),
-        TxEnvelope::Eip2930(signed_tx) => safe_encode_transaction_type_1(tx, signed_tx),
-        TxEnvelope::Eip1559(signed_tx) => safe_encode_transaction_type_2(tx, signed_tx),
-        TxEnvelope::Eip4844(signed_tx) => safe_encode_transaction_type_3(tx, signed_tx),
-        TxEnvelope::Eip7702(signed_tx) => safe_encode_transaction_type_4(tx, signed_tx),
-        // _ => {
-        //     encode_other(tx)
-        // }
+pub fn encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
+    let mut list = Vec::new();
+    for access_list_item in access_list {
+        let mut storage_keys = Vec::new();
+        for storage_item in access_list_item.storage_keys {
+            storage_keys.push(DynSolValue::FixedBytes(storage_item, 32));
+        }
+
+        // Create the `DynSolValue::Tuple` (address, storage_keys)
+        let access_list_tuple = DynSolValue::Tuple(vec![
+            DynSolValue::Address(access_list_item.address), // Address
+            DynSolValue::Array(storage_keys),
+        ]);
+
+        list.push(access_list_tuple);
     }
-}
 
-fn encode_receipt(rx: TransactionReceipt) -> Vec<DynSolValue> {
-    // because packing has to be packed and cannot nest we change it to be uint8, uint64, bytes[], bytes
-
-    // so because we are packing here..
-    // we must first encode each receipt has an array of bytes[]
-    let log_blooms = rx.inner.logs_bloom().0.to_vec();
-    let result = vec![
-        // uint8
-        DynSolValue::Uint(U256::from(rx.status()), 8),
-        // uint64
-        DynSolValue::Uint(U256::from(rx.gas_used), 64),
-        // bytes[]
-        DynSolValue::Array(
-            rx.inner
-                .logs()
-                .iter()
-                .map(|log| {
-                    // this lambda, turns the log into a bytes
-
-                    let topics = DynSolValue::Array(
-                        log.topics()
-                            .iter()
-                            .map(|topic| DynSolValue::FixedBytes(*topic, 32))
-                            .collect(),
-                    );
-
-                    let log_values = vec![
-                        DynSolValue::Address(log.address()),
-                        topics,
-                        DynSolValue::Bytes(log.data().data.to_vec()),
-                    ];
-
-                    let safe_log_values = insert_separator(log_values);
-                    let log_tuple = DynSolValue::Tuple(safe_log_values);
-
-                    DynSolValue::Bytes(log_tuple.abi_encode_packed())
-                })
-                .collect(),
-        ),
-        // bytes
-        DynSolValue::Bytes(log_blooms),
-    ];
-
-    insert_separator(result)
-}
-
-pub fn safe_solidity_packed_encode(
-    tx: Transaction,
-    rx: TransactionReceipt,
-) -> Result<AbiEncodeResult, Box<dyn std::error::Error>> {
-    let transaction_fields = safe_encode_transaction(tx);
-    let receipt_fields = encode_receipt(rx);
-    let mut all_fields = Vec::new();
-    all_fields.extend(transaction_fields);
-    all_fields.push(DynSolValue::Uint(U256::from(0), 8)); // seperator between tx fields and rx fields.
-    all_fields.extend(receipt_fields);
-    let tuple = DynSolValue::Tuple(all_fields.clone());
-    let final_bytes = tuple.abi_encode_packed();
-
-    let field_type: Vec<String> = all_fields
-        .into_iter()
-        .map(|field| match field.as_type() {
-            Some(sol_type) => sol_type.sol_type_name().into_owned(),
-            None => "unknown".into(),
-        })
-        .collect();
-
-    Ok(AbiEncodeResult {
-        types: field_type,
-        abi: final_bytes,
-    })
+    // Wrap into `DynSolValue::Array`
+    DynSolValue::Array(list)
 }
