@@ -1,10 +1,15 @@
-use ccnext_abi_encoding::abi::abi_encode;
 use crate::{
-    {abi::{models::QueryableFields, query_builder::QueryBuilder}, test_helpers::{
-        check_results, get_transaction_and_receipt, get_vrs, get_y_parity, ResultField, TestAbiProvider,
-    }},
+    abi::{models::QueryableFields, query_builder::QueryBuilder},
+    test_helpers::{
+        check_results, get_transaction_and_receipt, get_vrs, get_y_parity, ResultField,
+        TestAbiProvider,
+    },
 };
+
 use alloy::consensus::Transaction;
+use ccnext_abi_encoding::abi::{abi_encode, EncodingVersion};
+
+const ENCODING: EncodingVersion = EncodingVersion::V1;
 
 // Tx/Rx Fields queried in this test: All legacy (type 0) fields except Tx Data
 // See abi_encoding_mapping.rs for details
@@ -18,9 +23,9 @@ async fn legacy_tx_queried_fields_match_expected() {
     assert!(tx.inner.is_legacy());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -91,9 +96,9 @@ async fn queried_receipt_fields_match_expected() {
     assert!(tx.inner.is_legacy());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -136,9 +141,9 @@ async fn event_builder_queried_fields_match_expected() {
     assert!(tx.inner.is_legacy());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -203,9 +208,9 @@ async fn function_builder_queried_fields_match_expected() {
     assert!(tx.inner.is_legacy());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -253,9 +258,9 @@ async fn type_1_tx_queried_fields_match_expected() {
     assert!(tx.inner.is_eip2930());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -271,7 +276,7 @@ async fn type_1_tx_queried_fields_match_expected() {
 
     let expected_results: Vec<ResultField> = vec![
         ResultField::TxChainId(tx.chain_id().unwrap()),
-        ResultField::TxYParity(get_y_parity(&tx))
+        ResultField::TxYParity(get_y_parity(&tx)),
     ];
 
     // Checking that all result data matches expected
@@ -292,9 +297,9 @@ async fn type_2_tx_queried_fields_match_expected() {
     assert!(tx.inner.is_eip1559());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -336,9 +341,9 @@ async fn type_3_tx_queried_fields_match_expected() {
     assert!(tx.inner.is_eip4844());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 
@@ -371,9 +376,9 @@ async fn type_4_tx_queried_fields_match_expected() {
     assert!(tx.inner.is_eip7702());
 
     // Encode transaction
-    let encoded = abi_encode(tx.clone(), rx.clone()).unwrap();
+    let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
-    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone())
+    let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));
 

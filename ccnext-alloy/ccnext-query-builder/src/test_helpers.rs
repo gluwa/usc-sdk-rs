@@ -1,13 +1,13 @@
-use ccnext_abi_encoding::common::{compute_v, compute_y_parity};
 use alloy::consensus::Transaction as _;
-use alloy::rpc::types::eth::transaction::Transaction;
 use alloy::eips::eip2930::AccessList;
+use alloy::rpc::types::eth::transaction::Transaction;
 use alloy::{
     primitives::{Address, B256, U256},
     providers::{Provider, ProviderBuilder},
     rpc::types::TransactionReceipt,
 };
 use async_trait::async_trait;
+use ccnext_abi_encoding::common::{compute_v, compute_y_parity};
 use std::str::FromStr;
 
 use crate::abi::models::QueryBuilderError;
@@ -72,26 +72,26 @@ pub fn check_results(
         // Pad expected result according to type
         let expected_padded: Vec<u8> = match expected {
             // All cases where 1 byte is padded to 32 bytes
-            ResultField::TxType(value) |
-            ResultField::TxYParity(value) | 
-            ResultField::RxStatus(value) => {
+            ResultField::TxType(value)
+            | ResultField::TxYParity(value)
+            | ResultField::RxStatus(value) => {
                 let mut value_padded: Vec<u8> = vec![0; 31];
                 value_padded.push(*value);
                 value_padded
-            },
+            }
             // All cases where 8 bytes are padded to 32 bytes
-            ResultField::RxGasUsed(value) |
-            ResultField::TxNonce(value) |
-            ResultField::TxChainId(value) |
-            ResultField::TxGasLimit(value) => {
+            ResultField::RxGasUsed(value)
+            | ResultField::TxNonce(value)
+            | ResultField::TxChainId(value)
+            | ResultField::TxGasLimit(value) => {
                 let mut value_padded: Vec<u8> = vec![0; 24];
                 value_padded.append(&mut Vec::from(value.to_be_bytes()));
                 value_padded
             }
             // All cases where 16 bytes are padded to 32 bytes
-            ResultField::TxGasPrice(value) |
-            ResultField::TxMaxPriorityFeePerGas(value) | 
-            ResultField::TxMaxFeePerGas(value) => {
+            ResultField::TxGasPrice(value)
+            | ResultField::TxMaxPriorityFeePerGas(value)
+            | ResultField::TxMaxFeePerGas(value) => {
                 let mut value_padded: Vec<u8> = vec![0; 16];
                 value_padded.append(&mut Vec::from(value.to_be_bytes()));
                 value_padded
@@ -104,7 +104,7 @@ pub fn check_results(
             ResultField::TxValue(value) => value.to_be_bytes_vec(),
             ResultField::TxAccessList(_list) => {
                 //TODO: figure out how access list should look when encoded
-                vec![] 
+                vec![]
             }
             ResultField::TxV(v) => v.to_be_bytes_vec(),
             ResultField::TxR(r) => Vec::from(r),
@@ -121,8 +121,7 @@ pub fn check_results(
         // TODO: Possibly allow field names to be added to ResultFields, just to make errors more intelligible.
         assert_eq!(
             &expected_padded, segment_bytes,
-            "Expected and actual didn't match. Field num: {}, Expected: {:?}, Actual: {:?}",
-            field_number, expected_padded, segment_bytes
+            "Expected and actual didn't match. Field num: {field_number}, Expected: {expected_padded:?}, Actual: {segment_bytes:?}",
         );
     }
 }
@@ -141,9 +140,7 @@ pub fn get_vrs(tx: &Transaction) -> (U256, [u8; 32], [u8; 32]) {
 }
 
 pub fn get_y_parity(tx: &Transaction) -> u8 {
-    let signature = tx
-        .inner
-        .signature();
+    let signature = tx.inner.signature();
     compute_y_parity(signature)
 }
 
