@@ -30,4 +30,4 @@ thiserror = { version = "1.0" }
 serde = { version = "=1.0.220" }
 serde_json = { version = "1.0" }
 
-ccnext-abi-encoding = { path = "ccnext-abi-encoding" }
+ccnext-abi-encoding = { version = "0.2.0" }
