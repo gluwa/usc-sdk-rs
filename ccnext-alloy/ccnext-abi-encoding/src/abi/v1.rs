@@ -1,6 +1,6 @@
 use crate::{
     abi::EncodeError,
-    common::{compute_v, compute_y_parity, encode_blob_hashes, AbiEncodeResult},
+    common::{compute_v, compute_y_parity, encode_blob_hashes, AbiEncodeResult, EncodingVersion},
 };
 use alloy::{
     consensus::{
@@ -18,6 +18,7 @@ fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Ve
     let signature = signed_tx.signature();
     let chain_id = tx.chain_id();
     let v = compute_v(signature, chain_id);
+    let (is_to_null, to) = map_tx_kind(&signed_tx.tx().to);
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(0), 8), // Transaction type 0
@@ -25,7 +26,8 @@ fn encode_transaction_type_0(tx: Transaction, signed_tx: Signed<TxLegacy>) -> Ve
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_price), 128), // Gas price
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit), 64), // Gas limit
         DynSolValue::Address(tx.from),       // From address
-        DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)), // To address
+        DynSolValue::Bool(is_to_null),       // Is null (true if contract creation)
+        DynSolValue::Address(to),            // To address
         DynSolValue::Uint(tx.value(), 256),  // Value                           // Value
         DynSolValue::Bytes(tx.input().to_vec()), // Input data (true = dynamic encoding)
         DynSolValue::Uint(U256::from(v), 256), // v (legacy is uint8)
@@ -40,7 +42,8 @@ fn encode_transaction_type_1(tx: Transaction, signed_tx: Signed<TxEip2930>) -> V
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity: u8 = compute_y_parity(signature);
-    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
+    let access_list = encode_access_list(&signed_tx.tx().access_list);
+    let (is_to_null, to) = map_tx_kind(&signed_tx.tx().to);
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(1), 8), // Transaction type 1
@@ -49,8 +52,9 @@ fn encode_transaction_type_1(tx: Transaction, signed_tx: Signed<TxEip2930>) -> V
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_price), 128), // Gas price
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit), 64), // Gas limit
         DynSolValue::Address(tx.from),                           // From address
-        DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)),  // To address
-        DynSolValue::Uint(tx.value(), 256),                      // Value
+        DynSolValue::Bool(is_to_null), // Is null (true if contract creation)
+        DynSolValue::Address(to),      // To address
+        DynSolValue::Uint(tx.value(), 256), // Value
         DynSolValue::Bytes(tx.input().to_vec()), // Input data (true = dynamic encoding)
         access_list,
         DynSolValue::Uint(U256::from(y_parity), 8), // y parity
@@ -65,17 +69,19 @@ fn encode_transaction_type_2(tx: Transaction, signed_tx: Signed<TxEip1559>) -> V
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity = compute_y_parity(signature);
-    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
+    let access_list = encode_access_list(&signed_tx.tx().access_list);
+    let (is_to_null, to) = map_tx_kind(&signed_tx.tx().to);
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(2), 8),
         DynSolValue::Uint(U256::from(signed_tx.tx().chain_id), 64),
         DynSolValue::Uint(U256::from(signed_tx.tx().nonce), 64),
-        DynSolValue::Uint(U256::from(tx.max_priority_fee_per_gas().unwrap_or(0)), 128),
+        DynSolValue::Uint(U256::from(signed_tx.tx().max_priority_fee_per_gas), 128),
         DynSolValue::Uint(U256::from(tx.max_fee_per_gas()), 128),
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit), 64),
         DynSolValue::Address(tx.from),
-        DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)),
+        DynSolValue::Bool(is_to_null),
+        DynSolValue::Address(to),
         DynSolValue::Uint(tx.value(), 256),
         DynSolValue::Bytes(tx.input().to_vec()),
         access_list,
@@ -95,34 +101,44 @@ fn encode_transaction_type_3(
     let signature = signed_tx.signature();
     let y_parity = compute_y_parity(signature);
 
-    let access_list_item_vector = match tx.access_list() {
-        Some(access_list) => access_list.0.clone(),
-        None => Vec::new(),
+    let access_list = match tx.access_list() {
+        Some(access_list) => encode_access_list(access_list),
+        None => encode_access_list(&[]),
     };
-    let access_list = encode_access_list(access_list_item_vector);
-    let blob_version_hashes = tx.blob_versioned_hashes().unwrap_or_default();
-    let blob_hashes = encode_blob_hashes(blob_version_hashes.to_vec());
 
-    // it seems its possible that chain id isn't set for some reason?
-    // if its a side car blob transaction.
-    let chain_id = tx.chain_id().unwrap_or(0);
+    let (to, chain_id, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_version_hashes) =
+        match signed_tx.tx() {
+            TxEip4844Variant::TxEip4844(tx_ref) => (
+                tx_ref.to,
+                tx_ref.chain_id,
+                tx_ref.max_priority_fee_per_gas,
+                tx_ref.max_fee_per_blob_gas,
+                &tx_ref.blob_versioned_hashes,
+            ),
+            TxEip4844Variant::TxEip4844WithSidecar(tx_ref) => (
+                tx_ref.tx.to,
+                tx_ref.tx.chain_id,
+                tx_ref.tx.max_priority_fee_per_gas,
+                tx_ref.tx.max_fee_per_blob_gas,
+                &tx_ref.tx.blob_versioned_hashes,
+            ),
+        };
+    let blob_hashes = encode_blob_hashes(blob_version_hashes);
 
     let values: Vec<DynSolValue> = vec![
         DynSolValue::Uint(U256::from(3), 8),
         DynSolValue::Uint(U256::from(chain_id), 64),
         DynSolValue::Uint(U256::from(signed_tx.tx().nonce()), 64),
-        DynSolValue::Uint(U256::from(tx.max_priority_fee_per_gas().unwrap_or(0)), 128),
+        DynSolValue::Uint(U256::from(max_priority_fee_per_gas), 128),
         DynSolValue::Uint(U256::from(tx.max_fee_per_gas()), 128),
         DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit()), 64),
         DynSolValue::Address(tx.from),
-        DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)),
+        DynSolValue::Bool(false), // EIP-4844 transactions cannot be contract creation
+        DynSolValue::Address(to),
         DynSolValue::Uint(tx.value(), 256),
         DynSolValue::Bytes(tx.input().to_vec()),
         access_list,
-        DynSolValue::Uint(
-            U256::from(signed_tx.tx().max_fee_per_blob_gas().unwrap_or(0u128)),
-            128,
-        ),
+        DynSolValue::Uint(U256::from(max_fee_per_blob_gas), 128),
         blob_hashes,
         DynSolValue::Uint(U256::from(y_parity), 8),
         DynSolValue::FixedBytes(B256::from(signature.r()), 32),
@@ -136,22 +152,19 @@ fn encode_transaction_type_4(tx: Transaction, signed_tx: Signed<TxEip7702>) -> V
     // Extract transaction fields
     let signature = signed_tx.signature();
     let y_parity = compute_y_parity(signature);
-    let access_list = encode_access_list(signed_tx.tx().access_list.0.clone());
-    let authorization_list = encode_authorization_list(signed_tx.tx().authorization_list.clone());
-
-    // it seems its possible that chain id isn't set for some reason?
-    // if its a side car blob transaction.
-    let chain_id = tx.chain_id().unwrap_or(0);
+    let access_list = encode_access_list(&signed_tx.tx().access_list);
+    let authorization_list = encode_authorization_list(&signed_tx.tx().authorization_list);
 
     let values: Vec<DynSolValue> = vec![
-        DynSolValue::Uint(U256::from(3), 8),
-        DynSolValue::Uint(U256::from(chain_id), 64),
-        DynSolValue::Uint(U256::from(signed_tx.tx().nonce()), 64),
-        DynSolValue::Uint(U256::from(tx.max_priority_fee_per_gas().unwrap_or(0)), 128),
-        DynSolValue::Uint(U256::from(tx.max_fee_per_gas()), 128),
-        DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit()), 64),
+        DynSolValue::Uint(U256::from(4), 8),
+        DynSolValue::Uint(U256::from(signed_tx.tx().chain_id), 64),
+        DynSolValue::Uint(U256::from(signed_tx.tx().nonce), 64),
+        DynSolValue::Uint(U256::from(signed_tx.tx().max_priority_fee_per_gas), 128),
+        DynSolValue::Uint(U256::from(signed_tx.tx().max_fee_per_gas), 128),
+        DynSolValue::Uint(U256::from(signed_tx.tx().gas_limit), 64),
         DynSolValue::Address(tx.from),
-        DynSolValue::Address(tx.to().unwrap_or(Address::ZERO)),
+        DynSolValue::Bool(false), // EIP-7702 transactions cannot be contract creation
+        DynSolValue::Address(signed_tx.tx().to),
         DynSolValue::Uint(tx.value(), 256),
         DynSolValue::Bytes(tx.input().to_vec()),
         access_list,
@@ -164,6 +177,13 @@ fn encode_transaction_type_4(tx: Transaction, signed_tx: Signed<TxEip7702>) -> V
     values
 }
 
+fn map_tx_kind(tx_kind: &alloy::primitives::TxKind) -> (bool, Address) {
+    match tx_kind {
+        alloy::primitives::TxKind::Create => (true, Address::ZERO),
+        alloy::primitives::TxKind::Call(address) => (false, *address),
+    }
+}
+
 fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
     match tx.inner.clone() {
         TxEnvelope::Legacy(signed_tx) => encode_transaction_type_0(tx, signed_tx),
@@ -174,8 +194,8 @@ fn encode_transaction(tx: Transaction) -> Vec<DynSolValue> {
     }
 }
 
-fn encode_authorization_list(signed_authorizations: Vec<SignedAuthorization>) -> DynSolValue {
-    let mut result = Vec::new();
+fn encode_authorization_list(signed_authorizations: &[SignedAuthorization]) -> DynSolValue {
+    let mut result = Vec::with_capacity(signed_authorizations.len());
     for signed_authorization in signed_authorizations {
         let signed_authorization_tuple = DynSolValue::Tuple(vec![
             DynSolValue::Uint(U256::from(*signed_authorization.chain_id()), 256),
@@ -186,19 +206,18 @@ fn encode_authorization_list(signed_authorizations: Vec<SignedAuthorization>) ->
             DynSolValue::Uint(U256::from(signed_authorization.s()), 256),
         ]);
 
-        //let pack_encoded = signed_authorization_tuple.abi_encode_packed();
         result.push(signed_authorization_tuple);
     }
 
     DynSolValue::Array(result)
 }
 
-fn encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
-    let mut list = Vec::new();
+fn encode_access_list(access_list: &[AccessListItem]) -> DynSolValue {
+    let mut list = Vec::with_capacity(access_list.len());
     for access_list_item in access_list {
-        let mut storage_keys = Vec::new();
-        for storage_item in access_list_item.storage_keys {
-            storage_keys.push(DynSolValue::FixedBytes(storage_item, 32));
+        let mut storage_keys = Vec::with_capacity(access_list_item.storage_keys.len());
+        for storage_item in &access_list_item.storage_keys {
+            storage_keys.push(DynSolValue::FixedBytes(*storage_item, 32));
         }
 
         // Create the `DynSolValue::Tuple` (address, storage_keys)
@@ -210,7 +229,6 @@ fn encode_access_list(access_list: Vec<AccessListItem>) -> DynSolValue {
         list.push(access_list_tuple);
     }
 
-    // Wrap into `DynSolValue::Array`
     DynSolValue::Array(list)
 }
 
@@ -272,8 +290,9 @@ pub(super) fn abi_encode(
         })
         .collect();
 
-    Ok(AbiEncodeResult {
-        types: field_types,
-        abi: final_bytes,
-    })
+    Ok(AbiEncodeResult::new(
+        field_types,
+        final_bytes,
+        EncodingVersion::V1,
+    ))
 }

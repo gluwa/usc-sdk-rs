@@ -7,7 +7,7 @@ use crate::{
 };
 
 use alloy::consensus::Transaction;
-use ccnext_abi_encoding::abi::{abi_encode, EncodingVersion};
+use ccnext_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
 const ENCODING: EncodingVersion = EncodingVersion::V1;
 
@@ -61,7 +61,7 @@ async fn legacy_tx_queried_fields_match_expected() {
         .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let (v, r, s) = get_vrs(&tx);
 
@@ -113,7 +113,7 @@ async fn queried_receipt_fields_match_expected() {
         .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
     let expected_results: Vec<ResultField> = vec![
         ResultField::RxStatus(rx.status() as u8),
         ResultField::RxGasUsed(rx.gas_used),
@@ -176,7 +176,7 @@ async fn event_builder_queried_fields_match_expected() {
         .expect("should have matched an event and constructed offsets");
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
         ResultField::EthAddress(rx.inner.logs()[1].address()), // Contract address in event
@@ -226,7 +226,7 @@ async fn function_builder_queried_fields_match_expected() {
         .expect("should be able to query some calldata segments");
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
         ResultField::FunctionSignifier(
@@ -272,7 +272,7 @@ async fn type_1_tx_queried_fields_match_expected() {
         .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
         ResultField::TxChainId(tx.chain_id().unwrap()),
@@ -314,10 +314,13 @@ async fn type_2_tx_queried_fields_match_expected() {
     //    .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
-        ResultField::TxMaxPriorityFeePerGas(tx.max_priority_fee_per_gas().unwrap_or(0)),
+        ResultField::TxMaxPriorityFeePerGas(
+            tx.max_priority_fee_per_gas()
+                .expect("max_priority_fee_per_gas should not be None"),
+        ),
         ResultField::TxMaxFeePerGas(tx.max_fee_per_gas()),
         // TODO: Properly test access list
         //ResultField::TxAccessList(tx.access_list().unwrap()),
@@ -355,10 +358,13 @@ async fn type_3_tx_queried_fields_match_expected() {
         .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
-        ResultField::TxMaxPriorityFeePerGas(tx.max_priority_fee_per_gas().unwrap_or(0)),
+        ResultField::TxMaxPriorityFeePerGas(
+            tx.max_priority_fee_per_gas()
+                .expect("max_priority_fee_per_gas should not be None"),
+        ),
         ResultField::TxMaxFeePerGas(tx.max_fee_per_gas()),
     ];
 
@@ -387,7 +393,7 @@ async fn type_4_tx_queried_fields_match_expected() {
     //    .unwrap();
 
     let selected_offsets = query_builder.get_selected_offsets();
-    let raw = encoded.abi.clone();
+    let raw = encoded.abi().to_vec();
 
     let expected_results: Vec<ResultField> = vec![
         // TODO: Properly test access list

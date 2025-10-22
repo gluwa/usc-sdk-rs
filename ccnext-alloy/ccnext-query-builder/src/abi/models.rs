@@ -19,6 +19,7 @@ pub enum QueryableFields {
     TxGasPrice,
     TxGasLimit,
     TxFrom,
+    TxToIsNull,
     TxTo,
     TxValue,
     TxData,

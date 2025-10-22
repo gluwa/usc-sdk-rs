@@ -19,7 +19,7 @@ use crate::abi::{
     models::{FieldMetadata, QueryableFields},
     query_builder_for_function::QueryBuilderForFunction,
 };
-use ccnext_abi_encoding::abi::{abi_encode, EncodingVersion};
+use ccnext_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
 #[async_trait]
 pub trait AbiProvider {
@@ -75,7 +75,7 @@ impl QueryBuilder {
         let sol_types: Vec<DynSolType> = field_and_types.iter().map(|f| f.1.clone()).collect();
 
         // compute the offsets.
-        let computed_offsets = match compute_abi_offsets(sol_types, encoded.abi.clone()) {
+        let computed_offsets = match compute_abi_offsets(sol_types, encoded.abi().to_vec()) {
             Ok(co) => co,
             Err(_) => {
                 return Err(QueryBuilderError::FailedToComputeOffsets);

@@ -1,14 +1,9 @@
-use super::common::AbiEncodeResult;
+use super::common::{AbiEncodeResult, EncodingVersion};
 
 use alloy::rpc::types::{Transaction, TransactionReceipt};
 use thiserror::Error;
 
 mod v1;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EncodingVersion {
-    V1 = 1,
-}
 
 #[derive(Debug, Error)]
 pub enum EncodeError {
@@ -16,6 +11,11 @@ pub enum EncodeError {
     Custom(String),
 }
 
+/// Encodes a given ethereum transaction and its receipt into ABI format
+/// according to the specified encoding version.
+///
+/// This function assumes that both the transaction and receipt comply with the ethereum specifications
+/// as defined in the `alloy` crate.
 pub fn abi_encode(
     tx: Transaction,
     rx: TransactionReceipt,

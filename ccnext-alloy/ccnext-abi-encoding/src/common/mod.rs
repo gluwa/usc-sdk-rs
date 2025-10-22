@@ -3,10 +3,38 @@ use alloy::primitives::{FixedBytes, U256};
 use alloy::signers::Signature;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EncodingVersion {
+    V1 = 1,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AbiEncodeResult {
-    pub types: Vec<String>,
-    pub abi: Vec<u8>,
+    types: Vec<String>,
+    abi: Vec<u8>,
+    version: EncodingVersion,
+}
+
+impl AbiEncodeResult {
+    pub fn new(types: Vec<String>, abi: Vec<u8>, version: EncodingVersion) -> Self {
+        Self {
+            types,
+            abi,
+            version,
+        }
+    }
+
+    pub fn types(&self) -> &[String] {
+        &self.types
+    }
+
+    pub fn abi(&self) -> &[u8] {
+        &self.abi
+    }
+
+    pub fn version(&self) -> EncodingVersion {
+        self.version
+    }
 }
 
 pub fn compute_v(signature: &Signature, chain_id: Option<u64>) -> U256 {
@@ -26,10 +54,10 @@ pub fn compute_y_parity(signature: &Signature) -> u8 {
     }
 }
 
-pub fn encode_blob_hashes(blob_hashes: Vec<FixedBytes<32>>) -> DynSolValue {
+pub fn encode_blob_hashes(blob_hashes: &[FixedBytes<32>]) -> DynSolValue {
     let mut result = Vec::new();
     for hash in blob_hashes {
-        result.push(DynSolValue::FixedBytes(hash, 32));
+        result.push(DynSolValue::FixedBytes(*hash, 32));
     }
     DynSolValue::Array(result)
 }

@@ -9,6 +9,7 @@ fn get_mapped_fields_for_type0() -> Vec<(QueryableFields, DynSolType)> {
         (QueryableFields::TxGasPrice, DynSolType::Uint(128)),
         (QueryableFields::TxGasLimit, DynSolType::Uint(64)),
         (QueryableFields::TxFrom, DynSolType::Address),
+        (QueryableFields::TxToIsNull, DynSolType::Bool),
         (QueryableFields::TxTo, DynSolType::Address),
         (QueryableFields::TxValue, DynSolType::Uint(256)),
         (QueryableFields::TxData, DynSolType::Bytes),
@@ -26,6 +27,7 @@ fn get_mapped_fields_for_type1() -> Vec<(QueryableFields, DynSolType)> {
         (QueryableFields::TxGasPrice, DynSolType::Uint(128)),
         (QueryableFields::TxGasLimit, DynSolType::Uint(64)),
         (QueryableFields::TxFrom, DynSolType::Address),
+        (QueryableFields::TxToIsNull, DynSolType::Bool),
         (QueryableFields::TxTo, DynSolType::Address),
         (QueryableFields::TxValue, DynSolType::Uint(256)),
         (QueryableFields::TxData, DynSolType::Bytes),
@@ -57,6 +59,7 @@ fn get_mapped_fields_for_type2() -> Vec<(QueryableFields, DynSolType)> {
         (QueryableFields::TxMaxFeePerGas, DynSolType::Uint(128)),
         (QueryableFields::TxGasLimit, DynSolType::Uint(64)),
         (QueryableFields::TxFrom, DynSolType::Address),
+        (QueryableFields::TxToIsNull, DynSolType::Bool),
         (QueryableFields::TxTo, DynSolType::Address),
         (QueryableFields::TxValue, DynSolType::Uint(256)),
         (QueryableFields::TxData, DynSolType::Bytes),
@@ -88,6 +91,7 @@ fn get_mapped_fields_for_type3() -> Vec<(QueryableFields, DynSolType)> {
         (QueryableFields::TxMaxFeePerGas, DynSolType::Uint(128)),
         (QueryableFields::TxGasLimit, DynSolType::Uint(64)),
         (QueryableFields::TxFrom, DynSolType::Address),
+        (QueryableFields::TxToIsNull, DynSolType::Bool),
         (QueryableFields::TxTo, DynSolType::Address),
         (QueryableFields::TxValue, DynSolType::Uint(256)),
         (QueryableFields::TxData, DynSolType::Bytes),
@@ -124,6 +128,7 @@ fn get_mapped_fields_for_type4() -> Vec<(QueryableFields, DynSolType)> {
         (QueryableFields::TxMaxFeePerGas, DynSolType::Uint(128)),
         (QueryableFields::TxGasLimit, DynSolType::Uint(64)),
         (QueryableFields::TxFrom, DynSolType::Address),
+        (QueryableFields::TxToIsNull, DynSolType::Bool),
         (QueryableFields::TxTo, DynSolType::Address),
         (QueryableFields::TxValue, DynSolType::Uint(256)),
         (QueryableFields::TxData, DynSolType::Bytes),
@@ -168,4 +173,23 @@ pub(super) fn get_mapped_field_for_type(
         TxType::Eip4844 => get_mapped_fields_for_type3(),
         TxType::Eip7702 => get_mapped_fields_for_type4(),
     }
+}
+
+pub(super) fn get_mapped_receipt_fields() -> Vec<(QueryableFields, DynSolType)> {
+    vec![
+        (QueryableFields::RxStatus, DynSolType::Uint(8)),
+        (QueryableFields::RxGasUsed, DynSolType::Uint(64)),
+        (
+            QueryableFields::RxLogs,
+            DynSolType::Array(
+                DynSolType::Tuple(vec![
+                    DynSolType::Address,
+                    DynSolType::Array(DynSolType::FixedBytes(32).into()),
+                    DynSolType::Bytes,
+                ])
+                .into(),
+            ),
+        ),
+        (QueryableFields::RxLogBlooms, DynSolType::Bytes),
+    ]
 }
