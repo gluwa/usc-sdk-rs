@@ -10,3 +10,7 @@ description = "ABI encoding library intended for use with the ccnext project."
 alloy = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+hex = { version = "0.4" }
