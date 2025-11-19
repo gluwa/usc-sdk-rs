@@ -3,7 +3,6 @@ members = ["ccnext-abi-encoding", "ccnext-query-builder"]
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
 license = "Unlicense"
 edition = "2021"
 
