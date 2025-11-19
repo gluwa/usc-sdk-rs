@@ -1,1 +1,4 @@
 ignore/
+**/target
+**/Cargo.lock
+**/.cargo/
