@@ -18,6 +18,7 @@ use super::{
 use crate::abi::{
     models::{FieldMetadata, QueryableFields},
     query_builder_for_function::QueryBuilderForFunction,
+    utils::{make_offsets_absolute, WORD_SIZE},
 };
 use ccnext_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
@@ -59,39 +60,97 @@ impl QueryBuilder {
     ) -> Result<QueryBuilder, QueryBuilderError> {
         // encode the transaction
         let encoded = match abi_encode(tx.clone(), rx.clone(), encoding) {
-            Ok(encoded_result) => encoded_result,
-            Err(_) => {
+            Some(encoded_result) => encoded_result,
+            None => {
                 return Err(QueryBuilderError::FailedToAbiEncode);
             }
         };
 
+        let abi_bytes = encoded.abi().to_vec();
+
         // get the strongly typed elements.
         let field_and_types = get_all_fields_for_transaction(tx.inner.tx_type(), encoding);
+        let fields: Vec<QueryableFields> = field_and_types.get_all_fields();
 
-        // only the types you need.
-        let fields: Vec<QueryableFields> = field_and_types.iter().map(|f| f.0.clone()).collect();
+        let param_types = vec![
+            DynSolType::Uint(8),
+            DynSolType::Array(DynSolType::Bytes.into()),
+        ];
 
-        // only the types you need.
-        let sol_types: Vec<DynSolType> = field_and_types.iter().map(|f| f.1.clone()).collect();
+        let initial_offsets = match compute_abi_offsets(param_types, &abi_bytes) {
+            Ok(offsets) => {
+                if offsets.len() != 2 || offsets[1].children.is_empty() {
+                    return Err(QueryBuilderError::FailedToComputeOffsets);
+                }
 
-        // compute the offsets.
-        let computed_offsets = match compute_abi_offsets(sol_types, encoded.abi().to_vec()) {
-            Ok(co) => co,
-            Err(_) => {
-                return Err(QueryBuilderError::FailedToComputeOffsets);
+                offsets
             }
+            Err(_) => return Err(QueryBuilderError::FailedToComputeOffsets),
         };
 
-        // TODO: Make sure this passes with various transactions. Doesn't intutitively feel like this should work
-        // in all cases as currently written, since `compute_abi_offsets` recursively adds children while
-        // `get_all_fields_for_transaction` doesn't.
-        if computed_offsets.len() != field_and_types.len() {
+        let byte_array_offset = &initial_offsets[1];
+
+        if byte_array_offset.children.len() != field_and_types.chunks.len() {
+            return Err(QueryBuilderError::FailedToComputeOffsets);
+        }
+
+        let mut computed_offsets = Vec::new();
+
+        for (chunk_index, chunk) in field_and_types.chunks.iter().enumerate() {
+            let chunk_data_offset = byte_array_offset.children[chunk_index].offset;
+
+            let length_prefix_start = chunk_data_offset - WORD_SIZE;
+            let length_bytes = &abi_bytes[length_prefix_start..chunk_data_offset];
+
+            // Decode length (last 8 bytes of the 32-byte word, big-endian)
+            let length = u64::from_be_bytes(
+                length_bytes[24..32]
+                    .try_into()
+                    .map_err(|_| QueryBuilderError::FailedToComputeOffsets)?,
+            );
+
+            // Extract chunk bytes (decoded, no length prefix)
+            let chunk_end = chunk_data_offset
+                .checked_add(length as usize)
+                .ok_or(QueryBuilderError::FailedToComputeOffsets)?;
+
+            if chunk_end > abi_bytes.len() {
+                return Err(QueryBuilderError::FailedToComputeOffsets);
+            }
+
+            let chunk_bytes = &abi_bytes[chunk_data_offset..chunk_end];
+            let chunk_types = chunk.get_types();
+
+            // For each chunk, compute its offsets.
+            let chunk_computed_offsets = match compute_abi_offsets(chunk_types, chunk_bytes) {
+                Ok(mut computed) => {
+                    for field_offset in &mut computed {
+                        make_offsets_absolute(field_offset, chunk_data_offset);
+                    }
+                    computed
+                }
+                Err(_) => return Err(QueryBuilderError::FailedToComputeOffsets),
+            };
+
+            if chunk.fields.len() != chunk_computed_offsets.len() {
+                return Err(QueryBuilderError::FailedToComputeOffsets);
+            }
+
+            computed_offsets.extend(chunk_computed_offsets);
+        }
+
+        if computed_offsets.len() != fields.len() {
             return Err(QueryBuilderError::MissMatchedLengthDecoding);
         }
 
         // create a map of offsets.
         let mut mapped_offsets = HashMap::<QueryableFields, FieldMetadata>::new();
+
+        // Addint type as the first field.
+        mapped_offsets.insert(QueryableFields::Type, initial_offsets[0].clone());
+
         let fields_offset = fields.iter().zip(computed_offsets.clone());
+
         for (field, offset) in fields_offset {
             mapped_offsets.insert(field.clone(), offset);
         }

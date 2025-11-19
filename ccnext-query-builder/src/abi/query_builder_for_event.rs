@@ -98,15 +98,15 @@ impl QueryBuilderForEvent {
 
                     // we have the body solidity types :) of the data field.
                     // we need to compute its offsets, similar to our transaction.
-                    let data: Vec<u8> = self.log.data().data.to_vec();
-                    let event_data_offsets = match compute_abi_offsets(body_sol_types, data) {
-                        Ok(offsets) => offsets,
-                        Err(_) => {
-                            return Err(QueryBuilderError::FailedToGetEventDataOffsets(Box::new(
-                                self.log.clone(),
-                            )))
-                        }
-                    };
+                    let event_data_offsets =
+                        match compute_abi_offsets(body_sol_types, &self.log.data().data) {
+                            Ok(offsets) => offsets,
+                            Err(_) => {
+                                return Err(QueryBuilderError::FailedToGetEventDataOffsets(
+                                    Box::new(self.log.clone()),
+                                ))
+                            }
+                        };
 
                     match event_data_offsets.get(data_index) {
                         Some(argument_field) => match argument_field.size {

@@ -10,22 +10,13 @@ pub enum EncodingVersion {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AbiEncodeResult {
-    types: Vec<String>,
     abi: Vec<u8>,
     version: EncodingVersion,
 }
 
 impl AbiEncodeResult {
-    pub fn new(types: Vec<String>, abi: Vec<u8>, version: EncodingVersion) -> Self {
-        Self {
-            types,
-            abi,
-            version,
-        }
-    }
-
-    pub fn types(&self) -> &[String] {
-        &self.types
+    pub fn new(abi: Vec<u8>, version: EncodingVersion) -> Self {
+        Self { abi, version }
     }
 
     pub fn abi(&self) -> &[u8] {

@@ -3,12 +3,11 @@ edition = { workspace = true }
 license = { workspace = true }
 name = "ccnext-abi-encoding"
 publish = true
-version = "0.4.0"
+version = "0.5.0"
 description = "ABI encoding library intended for use with the ccnext project."
 
 [dependencies]
 alloy = { workspace = true }
-thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]

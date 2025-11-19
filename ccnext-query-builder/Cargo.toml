@@ -3,7 +3,7 @@ edition = { workspace = true }
 license = { workspace = true }
 name = "ccnext-query-builder"
 publish = true
-version = "0.6.0"
+version = "0.7.0"
 description = "Query builder library. Used for the construction of ccnext proving queries."
 
 [dependencies]

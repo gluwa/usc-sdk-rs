@@ -90,11 +90,10 @@ impl QueryBuilderForFunction {
         let sliced_data = &data[FUNCTION_SIGNATURE_SIZE..data_size];
 
         // compute the offsets :)
-        let data_computed_offsets =
-            match compute_abi_offsets(calldata_sol_types, sliced_data.into()) {
-                Ok(offsets) => offsets,
-                Err(_) => return Err(QueryBuilderError::FailedToComputeOffsetsForCalldata),
-            };
+        let data_computed_offsets = match compute_abi_offsets(calldata_sol_types, sliced_data) {
+            Ok(offsets) => offsets,
+            Err(_) => return Err(QueryBuilderError::FailedToComputeOffsetsForCalldata),
+        };
 
         match data_computed_offsets.get(matched_argument_index) {
             Some(field) => match field.size {

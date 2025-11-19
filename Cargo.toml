@@ -8,18 +8,18 @@ edition = "2021"
 
 [workspace.dependencies]
 alloy = { version = "0.11", features = [
-    "node-bindings",
-    "providers",
-    "provider-http",
-    "provider-ws",
-    "rpc-client",
-    "rpc-types",
-    "rpc-types-eth",
-    "consensus",
-    "rlp",
-    "contract",
-    "sol-types",
-    "signers",
+  "node-bindings",
+  "providers",
+  "provider-http",
+  "provider-ws",
+  "rpc-client",
+  "rpc-types",
+  "rpc-types-eth",
+  "consensus",
+  "rlp",
+  "contract",
+  "sol-types",
+  "signers",
 ] }
 alloy-json-abi = { version = "0.8.23" }
 tokio = { version = "1" }
@@ -29,4 +29,4 @@ thiserror = { version = "1.0" }
 serde = { version = "=1.0.220" }
 serde_json = { version = "1.0" }
 
-ccnext-abi-encoding = { version = "0.4.0" }
+ccnext-abi-encoding = { path = "ccnext-abi-encoding" }

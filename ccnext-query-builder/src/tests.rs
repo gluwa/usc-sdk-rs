@@ -143,6 +143,8 @@ async fn event_builder_queried_fields_match_expected() {
     // Encode transaction
     let encoded = abi_encode(tx.clone(), rx.clone(), ENCODING).unwrap();
 
+    println!("Encoded ABI: {:?}", encoded.abi());
+
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
     query_builder.set_abi_provider(Box::new(TestAbiProvider()));

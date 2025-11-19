@@ -1,11 +1,10 @@
+use crate::abi::models::FieldMetadata;
 use alloy::{
     dyn_abi::{Decoder, DynSolType},
     sol_types::Error,
 };
 
-use super::models::FieldMetadata;
-
-const WORD_SIZE: usize = 32;
+pub(crate) const WORD_SIZE: usize = 32;
 
 #[derive(Debug)]
 pub enum ComputeAbiOffsetsError {
@@ -14,10 +13,9 @@ pub enum ComputeAbiOffsetsError {
 
 pub fn compute_abi_offsets(
     types: Vec<DynSolType>,
-    abi: Vec<u8>,
+    abi: &[u8],
 ) -> Result<Vec<FieldMetadata>, ComputeAbiOffsetsError> {
-    let mut reader = Decoder::new(&abi, false);
-
+    let mut reader = Decoder::new(abi, false);
     match decode_offset_recursive(&mut reader, types, 0) {
         Ok(result) => Ok(result),
         Err(err) => Err(ComputeAbiOffsetsError::FailedToDecode(err)),
@@ -41,12 +39,12 @@ fn decode_offset_recursive(
                 let absolute_offset = base_offset + relative_offset;
                 let word = reader.take_word()?;
                 result.push(FieldMetadata {
+                    sol_type: sol_type.clone(),
                     offset: absolute_offset,
-                    children: vec![],
-                    is_dynamic: false,
                     size: Some(WORD_SIZE),
-                    sol_type,
+                    is_dynamic: false,
                     value: Some(word.0.to_vec()),
+                    children: vec![],
                 });
             }
             DynSolType::Bytes | DynSolType::String => {
@@ -56,12 +54,12 @@ fn decode_offset_recursive(
                 let data = sub_reader.take_slice(size)?;
                 let dynamic_field_absolute_offset = base_offset + offset + WORD_SIZE;
                 result.push(FieldMetadata {
+                    sol_type: sol_type.clone(),
                     offset: dynamic_field_absolute_offset,
-                    children: vec![],
-                    is_dynamic: true,
                     size: Some(size),
-                    sol_type,
+                    is_dynamic: true,
                     value: Some(data.to_vec()),
+                    children: vec![],
                 });
             }
             DynSolType::Array(array_element_sol_type_boxed) => {
@@ -70,11 +68,9 @@ fn decode_offset_recursive(
                 let absolute_offset = base_offset + field_dynamic_offset;
                 let mut sub_reader = reader.child(field_dynamic_offset)?; // create a sub reader..
                 let number_of_elements = sub_reader.take_offset()?; // reader the number of elements..
-
-                // if the child of the array is dynamic, its treated quite differently
-                // as if it was a dynamic child.
+                                                                    // if the child of the array is dynamic, its treated quite differently
+                                                                    // as if it was a dynamic child.
                 let array_element_sol_type_unboxed = *array_element_sol_type_boxed;
-
                 // this can probably be a function on its own D:
                 let array_components: Vec<DynSolType> = match array_element_sol_type_unboxed.clone()
                 {
@@ -100,32 +96,62 @@ fn decode_offset_recursive(
                         dynamic_array_relative_offsets.push(child_element_offset);
                     }
 
-                    // next we need to loop through..
-                    //let size_of_offsets = number_of_elements * WORD_SIZE;
+                    // STRICT FIX: Only handle bytes/string arrays differently
+                    let is_bytes_or_string = matches!(
+                        array_element_sol_type_unboxed,
+                        DynSolType::Bytes | DynSolType::String
+                    );
+
                     for array_element_offset in dynamic_array_relative_offsets {
-                        // calculate an absolute position, from the current.
-                        let semi_absolute_positon =
-                            field_dynamic_offset + array_element_offset + WORD_SIZE;
-                        let mut child_element_sub_reader = reader.child(semi_absolute_positon)?;
+                        if is_bytes_or_string {
+                            // For bytes/string in arrays, arrayElementOffset is relative to the start of offsets array
+                            // Offsets array starts at field_dynamic_offset + WORD_SIZE (after array length prefix)
+                            // So absolute position is: base_offset + field_dynamic_offset + WORD_SIZE + array_element_offset
+                            let absolute_data_offset = base_offset
+                                + field_dynamic_offset
+                                + WORD_SIZE
+                                + array_element_offset;
+                            let mut data_sub_reader = reader.child(absolute_data_offset)?;
+                            let length = data_sub_reader.take_offset()?; // Read length
+                            let data = data_sub_reader.take_slice(length)?;
 
-                        // absolute position since parents..
-                        let position = base_offset + semi_absolute_positon;
+                            children.push(FieldMetadata {
+                                sol_type: array_element_sol_type_unboxed.clone(),
+                                offset: absolute_data_offset + WORD_SIZE, // Absolute position of data start (after length prefix)
+                                size: Some(length),
+                                is_dynamic: true,
+                                value: Some(data.to_vec()),
+                                children: vec![],
+                            });
+                        } else {
+                            // Original code path for tuples and other types (unchanged)
+                            // the only problem is to calculate the absolute position
+                            // its a bit more complicated you need to consider the offset since the begining
+                            // so hmm at this point the sub reader has already read all the offset so its cursor is kind of already at the right place.
+                            // so the position is hmm
+                            let semi_absolute_positon =
+                                field_dynamic_offset + array_element_offset + WORD_SIZE;
+                            let mut child_element_sub_reader =
+                                reader.child(semi_absolute_positon)?;
 
-                        // go decode the children :)
-                        let children_of_child = decode_offset_recursive(
-                            &mut child_element_sub_reader,
-                            array_components.clone(),
-                            position,
-                        )?;
+                            // absolute position since parents..
+                            let position = base_offset + semi_absolute_positon;
+                            // go decode the children :)
+                            let children_of_child = decode_offset_recursive(
+                                &mut child_element_sub_reader,
+                                array_components.clone(),
+                                position,
+                            )?;
 
-                        children.push(FieldMetadata {
-                            children: children_of_child,
-                            is_dynamic: true,
-                            offset: position,
-                            size: None,
-                            sol_type: array_element_sol_type_unboxed.clone(),
-                            value: None,
-                        });
+                            children.push(FieldMetadata {
+                                sol_type: array_element_sol_type_unboxed.clone(),
+                                offset: position,
+                                size: None,
+                                is_dynamic: true,
+                                value: None,
+                                children: children_of_child,
+                            });
+                        }
                     }
                 } else {
                     // in this case it means that the inner type of the dynamic array is not a dynamic type
@@ -139,19 +165,18 @@ fn decode_offset_recursive(
                 }
 
                 result.push(FieldMetadata {
-                    children,
-                    is_dynamic: true,
+                    sol_type: sol_type.clone(),
                     offset: absolute_offset,
                     size: None,
-                    sol_type,
+                    is_dynamic: true,
                     value: None,
+                    children,
                 });
             }
             DynSolType::FixedArray(array_element_sol_type_boxed, number_of_elements) => {
                 // if the child of the array is dynamic, its treated quite differently
                 // as if it was a dynamic child.
                 let array_element_sol_type_unboxed = *array_element_sol_type_boxed;
-
                 // this can probably be a function on its own D:
                 let array_components: Vec<DynSolType> = match array_element_sol_type_unboxed.clone()
                 {
@@ -171,7 +196,6 @@ fn decode_offset_recursive(
                     // okay so this uses an offset..
                     let offset = reader.take_offset()?;
                     let absolute_offset = base_offset + offset;
-
                     // we need a sub reader there..
                     let mut sub_reader = reader.child(offset)?;
                     let children = decode_offset_recursive(
@@ -180,12 +204,12 @@ fn decode_offset_recursive(
                         absolute_offset,
                     )?;
                     result.push(FieldMetadata {
-                        children,
-                        is_dynamic: true,
+                        sol_type: sol_type.clone(),
                         offset: absolute_offset,
                         size: None,
+                        is_dynamic: true,
                         value: None,
-                        sol_type,
+                        children,
                     });
                 } else {
                     // easy enough we just recursive.
@@ -193,12 +217,12 @@ fn decode_offset_recursive(
                     let children =
                         decode_offset_recursive(reader, array_components, absolute_offset)?;
                     result.push(FieldMetadata {
-                        children,
-                        is_dynamic: false,
+                        sol_type: sol_type.clone(),
                         offset: absolute_offset,
                         size: None,
+                        is_dynamic: false,
                         value: None,
-                        sol_type,
+                        children,
                     });
                 }
             }
@@ -213,23 +237,23 @@ fn decode_offset_recursive(
                         offset_of_dynamic_data,
                     )?;
                     result.push(FieldMetadata {
+                        sol_type: sol_type.clone(),
                         offset: offset_of_tuple,
-                        children,
-                        is_dynamic: true,
                         size: None,
-                        sol_type,
+                        is_dynamic: true,
                         value: None,
+                        children,
                     });
                 } else {
                     let offset_of_tuple = base_offset + reader.offset();
                     let children = decode_offset_recursive(reader, tuple_components, base_offset)?;
                     result.push(FieldMetadata {
+                        sol_type: sol_type.clone(),
                         offset: offset_of_tuple,
-                        children,
-                        is_dynamic: false,
                         size: None,
-                        sol_type,
+                        is_dynamic: false,
                         value: None,
+                        children,
                     });
                 }
             }
@@ -240,32 +264,10 @@ fn decode_offset_recursive(
             }
         }
     }
-
     Ok(result)
 }
 
 pub fn is_dynamic(sol_type: DynSolType) -> bool {
-    /*
-        export function isDynamic(param: ParamType): boolean {
-        // A dynamic array is indicated by arrayLength === -1.
-        if (param.arrayChildren) {
-            if (param.arrayLength === -1) return true;
-            // Even fixed-size arrays are dynamic if their element type is dynamic.
-            return isDynamic(param.arrayChildren);
-        }
-        // String and bytes types are dynamic.
-        if (param.type === "string" || param.type === "bytes") {
-            return true;
-        }
-        // For tuples: if any component is dynamic, then the tuple is dynamic.
-        if (param.baseType === "tuple" && param.components) {
-            return param.components.some(component => isDynamic(component));
-        }
-        // Otherwise, we assume it is static.
-        return false;
-    }
-         */
-
     match sol_type {
         DynSolType::Bool => false,
         DynSolType::Int(_) => false,
@@ -283,8 +285,15 @@ pub fn is_dynamic(sol_type: DynSolType) -> bool {
                     return true;
                 }
             }
-
             false
         }
+    }
+}
+
+/// Recursively makes offsets absolute by adding baseOffset to field and all children
+pub(crate) fn make_offsets_absolute(field: &mut FieldMetadata, base_offset: usize) {
+    field.offset += base_offset;
+    for child in &mut field.children {
+        make_offsets_absolute(child, base_offset);
     }
 }
