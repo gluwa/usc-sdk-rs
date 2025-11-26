@@ -1,0 +1,46 @@
+---
+name: Release to crates.io
+
+"on":
+  workflow_dispatch:
+    inputs:
+      PACKAGE_NAME:
+        required: false
+        type: choice
+        description: Publish only the selected package
+        options:
+        - ccnext-abi-encoding
+        - ccnext-query-builder
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  cargo-publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure rustc version
+        run: |
+          RUSTC_VERSION=$(grep channel rust-toolchain.toml | tail -n1 | tr -d " " | cut -f2 -d'"')
+          echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUSTC_VERSION }}
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo publish ${{ inputs.PACKAGE_NAME }}
+        if: ${{ inputs.PACKAGE_NAME }}
+        run: |
+          cargo publish --verbose --package ${{ inputs.PACKAGE_NAME }} --token ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Run cargo publish --workspace
+        if: ${{ ! inputs.PACKAGE_NAME }}
+        run: |
+          cargo publish --verbose --workspace --token ${{ secrets.CRATES_IO_TOKEN }}
