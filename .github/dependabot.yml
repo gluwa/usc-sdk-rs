@@ -1,0 +1,28 @@
+---
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    rebase-strategy: "disabled"
+    groups:
+      all-dependencies:
+        dependency-type: "production"
+        applies-to: version-updates
+
+  - package-ecosystem: "cargo"
+    directories:
+      - "/"
+      - "/ccnext-abi-encoding"
+      - "/ccnext-query-builder"
+    groups:
+      prod-dependencies:
+        dependency-type: "production"
+        applies-to: version-updates
+      dev-dependencies:
+        dependency-type: "development"
+        applies-to: version-updates
+    schedule:
+      interval: "monthly"
