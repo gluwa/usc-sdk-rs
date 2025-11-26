@@ -11,8 +11,6 @@ alloy = { workspace = true }
 alloy-json-abi = { workspace = true, features = ["serde_json"] }
 async-trait = { version = "0.1.42" }
 hex = { workspace = true }
-thiserror = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
 
 ccnext-abi-encoding = { workspace = true }
 
