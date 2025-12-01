@@ -39,8 +39,3 @@ jobs:
         if: ${{ inputs.PACKAGE_NAME }}
         run: |
           cargo publish --verbose --package ${{ inputs.PACKAGE_NAME }} --token ${{ secrets.CRATES_IO_TOKEN }} --dry-run
-
-      - name: Run cargo publish --workspace
-        if: ${{ ! inputs.PACKAGE_NAME }}
-        run: |
-          cargo publish --verbose --workspace --token ${{ secrets.CRATES_IO_TOKEN }} --dry-run
