@@ -7,7 +7,7 @@ use alloy::{
     rpc::types::TransactionReceipt,
 };
 use async_trait::async_trait;
-use ccnext_abi_encoding::common::{compute_v, compute_y_parity};
+use usc_abi_encoding::common::{compute_v, compute_y_parity};
 use std::str::FromStr;
 
 use crate::abi::models::QueryBuilderError;

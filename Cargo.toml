@@ -1,5 +1,5 @@
 [workspace]
-members = ["ccnext-abi-encoding", "ccnext-query-builder"]
+members = ["usc-abi-encoding", "usc-query-builder"]
 resolver = "2"
 
 [workspace.package]
@@ -28,4 +28,4 @@ hex = { version = "0.4" }
 serde = { version = "=1.0.220" }
 serde_json = { version = "1.0" }
 
-ccnext-abi-encoding = { path = "ccnext-abi-encoding" }
+usc-abi-encoding = { path = "usc-abi-encoding" }

@@ -1,10 +1,10 @@
-# CCNext ABI Encoding
+# USC ABI Encoding
 
-A Rust library for encoding Ethereum transactions and receipts into ABI format, specifically designed for the CCNext project. This library provides efficient encoding that respects Solidity's stack limitations through a sophisticated chunking mechanism.
+A Rust library for encoding Ethereum transactions and receipts into ABI format, specifically designed for the Creditcoin USC network. This library provides efficient encoding that respects Solidity's stack limitations through a sophisticated chunking mechanism.
 
 ## Overview
 
-The CCNext ABI encoding library transforms Ethereum transactions and their corresponding receipts into a standardized ABI-encoded format. The primary innovation of this library is its **chunked encoding approach**, which is specifically designed to work around Solidity's stack depth limitations.
+The USC ABI encoding library transforms Ethereum transactions and their corresponding receipts into a standardized ABI-encoded format. The primary innovation of this library is its **chunked encoding approach**, which is specifically designed to work around Solidity's stack depth limitations.
 
 ## Why Chunked Encoding?
 
@@ -87,7 +87,7 @@ Additional authorization lists, blob data, or other complex structures.
 ## Usage
 
 ```rust
-use ccnext_abi_encoding::{abi_encode, EncodingVersion};
+use usc_abi_encoding::{abi_encode, EncodingVersion};
 use alloy::rpc::types::{Transaction, TransactionReceipt};
 
 // Encode a transaction and receipt

@@ -20,7 +20,7 @@ use crate::abi::{
     query_builder_for_function::QueryBuilderForFunction,
     utils::{make_offsets_absolute, WORD_SIZE},
 };
-use ccnext_abi_encoding::{abi::abi_encode, common::EncodingVersion};
+use usc_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
 #[async_trait]
 pub trait AbiProvider {

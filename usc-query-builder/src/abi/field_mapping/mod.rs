@@ -1,7 +1,7 @@
 use crate::abi::models::QueryableFields;
 
 use alloy::{consensus::TxType, dyn_abi::DynSolType};
-use ccnext_abi_encoding::common::EncodingVersion;
+use usc_abi_encoding::common::EncodingVersion;
 
 mod v1;
 
