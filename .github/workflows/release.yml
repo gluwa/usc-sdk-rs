@@ -9,12 +9,12 @@ name: Release to crates.io
         type: choice
         description: Publish only the selected package
         options:
-        - ccnext-abi-encoding
-        - ccnext-query-builder
+        - usc-abi-encoding
+        - usc-query-builder
   push:
     tags:
-      - ccnext-abi-encoding-**
-      - ccnext-query-builder-**
+      - usc-abi-encoding-**
+      - usc-query-builder-**
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
