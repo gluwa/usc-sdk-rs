@@ -15,7 +15,7 @@ pub fn compute_abi_offsets(
     types: Vec<DynSolType>,
     abi: &[u8],
 ) -> Result<Vec<FieldMetadata>, ComputeAbiOffsetsError> {
-    let mut reader = Decoder::new(abi, false);
+    let mut reader = Decoder::new(abi);
     match decode_offset_recursive(&mut reader, types, 0) {
         Ok(result) => Ok(result),
         Err(err) => Err(ComputeAbiOffsetsError::FailedToDecode(err)),
@@ -68,8 +68,8 @@ fn decode_offset_recursive(
                 let absolute_offset = base_offset + field_dynamic_offset;
                 let mut sub_reader = reader.child(field_dynamic_offset)?; // create a sub reader..
                 let number_of_elements = sub_reader.take_offset()?; // reader the number of elements..
-                                                                    // if the child of the array is dynamic, its treated quite differently
-                                                                    // as if it was a dynamic child.
+                // if the child of the array is dynamic, its treated quite differently
+                // as if it was a dynamic child.
                 let array_element_sol_type_unboxed = *array_element_sol_type_boxed;
                 // this can probably be a function on its own D:
                 let array_components: Vec<DynSolType> = match array_element_sol_type_unboxed.clone()

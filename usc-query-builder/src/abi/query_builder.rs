@@ -5,7 +5,7 @@ use alloy::{
     dyn_abi::{DecodedEvent, DynSolType, EventExt},
     hex::FromHex,
     json_abi::JsonAbi,
-    primitives::{map::HashSet, FixedBytes},
+    primitives::{FixedBytes, map::HashSet},
     rpc::types::{Log, Transaction, TransactionReceipt},
 };
 use alloy_json_abi::Event;
@@ -18,7 +18,7 @@ use super::{
 use crate::abi::{
     models::{FieldMetadata, QueryableFields},
     query_builder_for_function::QueryBuilderForFunction,
-    utils::{make_offsets_absolute, WORD_SIZE},
+    utils::{WORD_SIZE, make_offsets_absolute},
 };
 use usc_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
@@ -27,10 +27,10 @@ pub trait AbiProvider {
     async fn get_abi(&self, contract_address: String) -> Result<String, QueryBuilderError>;
 }
 
-pub struct QueryBuilder {
+pub struct QueryBuilder<T> {
     tx: Transaction,
     rx: TransactionReceipt,
-    abi_provider: Option<Box<dyn AbiProvider>>,
+    abi_provider: Option<Box<T>>,
     _computed_offsets: Vec<FieldMetadata>,
     mapped_offsets: HashMap<QueryableFields, FieldMetadata>,
     selected_offsets: Vec<(usize, usize)>,
@@ -52,12 +52,15 @@ fn hex_to_4_bytes(hex: &str) -> Result<[u8; 4], &'static str> {
     Ok(arr)
 }
 
-impl QueryBuilder {
+impl<T> QueryBuilder<T>
+where
+    T: AbiProvider + Sync,
+{
     pub fn create_from_transaction(
         tx: Transaction,
         rx: TransactionReceipt,
         encoding: EncodingVersion,
-    ) -> Result<QueryBuilder, QueryBuilderError> {
+    ) -> Result<QueryBuilder<T>, QueryBuilderError> {
         // encode the transaction
         let encoded = match abi_encode(tx.clone(), rx.clone(), encoding) {
             Some(encoded_result) => encoded_result,
@@ -166,7 +169,7 @@ impl QueryBuilder {
         })
     }
 
-    pub fn set_abi_provider(&mut self, abi_provider: Box<dyn AbiProvider>) {
+    pub fn set_abi_provider(&mut self, abi_provider: Box<T>) {
         self.abi_provider = Some(abi_provider);
     }
 
@@ -200,7 +203,7 @@ impl QueryBuilder {
             let name_of_signature_bytes = match self::hex_to_4_bytes(name_or_signature.as_str()) {
                 Ok(t) => t,
                 Err(_) => {
-                    return Err(QueryBuilderError::FunctionSignatureNameProvidedIsNotValidHex)
+                    return Err(QueryBuilderError::FunctionSignatureNameProvidedIsNotValidHex);
                 }
             };
 
@@ -212,7 +215,7 @@ impl QueryBuilder {
                 None => {
                     return Err(QueryBuilderError::FailedToFindFunctionByNameOrSignature(
                         name_or_signature,
-                    ))
+                    ));
                 }
             }
         } else {
@@ -229,7 +232,7 @@ impl QueryBuilder {
                         None => {
                             return Err(QueryBuilderError::FailedToFindFunctionByNameOrSignature(
                                 name_or_signature,
-                            ))
+                            ));
                         }
                     }
                 }
@@ -293,7 +296,7 @@ impl QueryBuilder {
                 None => {
                     return Err(QueryBuilderError::FailedToGetEventDataOffsets(Box::new(
                         log,
-                    )))
+                    )));
                 }
             };
 
@@ -327,7 +330,7 @@ impl QueryBuilder {
             None => {
                 return Err(QueryBuilderError::FailedToFindEventByNameOrSignature(
                     event_name_or_signature,
-                ))
+                ));
             }
         };
 
@@ -387,7 +390,7 @@ impl QueryBuilder {
                 match FixedBytes::<32>::from_hex(event_name_or_signature.clone()) {
                     Ok(decoded_fixed_bytes) => decoded_fixed_bytes,
                     Err(_) => {
-                        return Err(QueryBuilderError::EventSignatureNameProvidedIsNotValidHex)
+                        return Err(QueryBuilderError::EventSignatureNameProvidedIsNotValidHex);
                     }
                 };
 
@@ -395,11 +398,11 @@ impl QueryBuilder {
             let mut filtered_logs = Vec::new();
             let mut contract_addresses = Vec::new();
             for (log_index, log) in self.rx.inner.logs().iter().enumerate() {
-                if let Some(event_hash) = log.topic0() {
-                    if event_hash.eq(&event_signature_as_fixed_bytes) {
-                        contract_addresses.push(log.address().to_string());
-                        filtered_logs.push((log_index, log.clone()));
-                    }
+                if let Some(event_hash) = log.topic0()
+                    && event_hash.eq(&event_signature_as_fixed_bytes)
+                {
+                    contract_addresses.push(log.address().to_string());
+                    filtered_logs.push((log_index, log.clone()));
                 }
             }
 
@@ -414,7 +417,7 @@ impl QueryBuilder {
                     None => {
                         return Err(QueryBuilderError::NoAbiFoundForContract(
                             contract_address.clone(),
-                        ))
+                        ));
                     }
                 };
 
@@ -424,7 +427,7 @@ impl QueryBuilder {
 
                 if let Some(event) = event_of_signature {
                     // we have the event woot woot.
-                    match event.decode_log(&log.inner, true) {
+                    match event.decode_log(&log.inner) {
                         Ok(decoded_event) => {
                             extended_logs.push((log, decoded_event, log_index, event.clone()));
                         }
@@ -473,7 +476,7 @@ impl QueryBuilder {
                     // we care about..
                     if event.name == event_name_or_signature {
                         // we have the event woot woot.
-                        match event.decode_log(&log.inner, true) {
+                        match event.decode_log(&log.inner) {
                             Ok(decoded_event) => {
                                 extended_logs.push((
                                     log.clone(),

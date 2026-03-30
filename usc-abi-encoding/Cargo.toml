@@ -3,7 +3,7 @@ edition = { workspace = true }
 license = { workspace = true }
 name = "usc-abi-encoding"
 publish = true
-version = "0.5.0"
+version = "0.6.0"
 description = "Ethereum ABI encoding library. Used for the encoding of transactions and proof submission in the Creditcoin USC network."
 
 [dependencies]
@@ -12,4 +12,4 @@ serde = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 serde_json = { workspace = true }
-hex = { version = "0.4" }
+hex = { workspace = true }

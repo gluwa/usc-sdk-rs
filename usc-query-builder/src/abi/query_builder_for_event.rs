@@ -104,7 +104,7 @@ impl QueryBuilderForEvent {
                             Err(_) => {
                                 return Err(QueryBuilderError::FailedToGetEventDataOffsets(
                                     Box::new(self.log.clone()),
-                                ))
+                                ));
                             }
                         };
 

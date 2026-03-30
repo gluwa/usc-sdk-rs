@@ -1,13 +1,13 @@
 [workspace]
 members = ["usc-abi-encoding", "usc-query-builder"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 license = "Unlicense"
-edition = "2021"
+edition = "2024"
 
 [workspace.dependencies]
-alloy = { version = "0.11", features = [
+alloy = { version = "1.8", features = [
   "node-bindings",
   "providers",
   "provider-http",
@@ -21,11 +21,11 @@ alloy = { version = "0.11", features = [
   "sol-types",
   "signers",
 ] }
-alloy-json-abi = { version = "0.8.23" }
+alloy-json-abi = { version = "1.5" }
 tokio = { version = "1" }
 hex = { version = "0.4" }
 # Pinned to avoid issues with alloy
-serde = { version = "=1.0.220" }
+serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 
 usc-abi-encoding = { path = "usc-abi-encoding" }

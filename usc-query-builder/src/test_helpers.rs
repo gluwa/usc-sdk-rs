@@ -40,7 +40,7 @@ pub enum ResultField {
 pub async fn get_transaction_and_receipt(tx_hash_str: &str) -> (Transaction, TransactionReceipt) {
     // RPC.
     let rpc_url = "https://sepolia-proxy-rpc.creditcoin.network";
-    let provider = ProviderBuilder::new().on_http(rpc_url.parse().unwrap());
+    let provider = ProviderBuilder::new().connect_http(rpc_url.parse().unwrap());
 
     // which transaction.
     let tx_hash = B256::from_str(tx_hash_str).unwrap();
@@ -64,7 +64,13 @@ pub fn check_results(
     result_segments: Vec<(usize, usize)>,
     abi: Vec<u8>,
 ) {
-    assert_eq!(expected_results.len(), result_segments.len(), "Number of expected results doesn't match segment count. Expected results: {}, Result segments: {}", expected_results.len(), result_segments.len());
+    assert_eq!(
+        expected_results.len(),
+        result_segments.len(),
+        "Number of expected results doesn't match segment count. Expected results: {}, Result segments: {}",
+        expected_results.len(),
+        result_segments.len()
+    );
 
     for (field_number, (expected, (offset, size))) in
         expected_results.iter().zip(result_segments).enumerate()
@@ -98,7 +104,7 @@ pub fn check_results(
             }
             ResultField::EthAddress(address) => {
                 let mut address_padded: Vec<u8> = vec![0; 12];
-                address_padded.append(&mut Vec::from(address.0 .0));
+                address_padded.append(&mut Vec::from(address.0.0));
                 address_padded
             }
             ResultField::TxValue(value) => value.to_be_bytes_vec(),
@@ -144,7 +150,7 @@ pub fn get_y_parity(tx: &Transaction) -> u8 {
     compute_y_parity(signature)
 }
 
-pub struct TestAbiProvider();
+pub struct TestAbiProvider;
 
 #[async_trait]
 impl AbiProvider for TestAbiProvider {
