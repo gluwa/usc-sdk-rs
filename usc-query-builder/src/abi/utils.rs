@@ -15,7 +15,7 @@ pub fn compute_abi_offsets(
     types: Vec<DynSolType>,
     abi: &[u8],
 ) -> Result<Vec<FieldMetadata>, ComputeAbiOffsetsError> {
-    let mut reader = Decoder::new(abi, false);
+    let mut reader = Decoder::new(abi);
     match decode_offset_recursive(&mut reader, types, 0) {
         Ok(result) => Ok(result),
         Err(err) => Err(ComputeAbiOffsetsError::FailedToDecode(err)),
