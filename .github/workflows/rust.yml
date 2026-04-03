@@ -149,15 +149,28 @@ jobs:
 
   cargo-test:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        rustc: [local, creditcoin3-next]
     steps:
       - uses: actions/checkout@v6
 
-      - name: Configure rustc version
+      - name: Configure rustc version from local source
+        if: matrix.rustc == 'local'
         run: |
           RUSTC_VERSION=$(grep channel rust-toolchain.toml | tail -n1 | tr -d " " | cut -f2 -d'"')
           echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
 
-      - name: Install Rust toolchain
+      - name: Configure rustc version from creditcoin3-next source
+        if: matrix.rustc == 'creditcoin3-next'
+        run: |
+          RUSTC_VERSION=$(curl --silent --header "Authorization: Bearer $GLUWA_BOT_TOKEN" https://raw.githubusercontent.com/gluwa/creditcoin3-next/poc_external_attestation_network/rust-toolchain.toml | grep channel | tail -n1 | tr -d " " | cut -f2 -d'"')
+          echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
+        env:
+          GLUWA_BOT_TOKEN: ${{ secrets.GLUWA_BOT_TOKEN }}
+
+      - name: Install Rust toolchain ${{ env.RUSTC_VERSION }}
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUSTC_VERSION }}
@@ -179,5 +192,5 @@ jobs:
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.rustc }}
           path: target/llvm-cov/html/
