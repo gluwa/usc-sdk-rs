@@ -5,9 +5,10 @@ resolver = "3"
 [workspace.package]
 license = "Unlicense"
 edition = "2024"
+rust-version = "1.94"
 
 [workspace.dependencies]
-alloy = { version = "1.8", features = [
+alloy = { version = "~1.6", features = [
   "node-bindings",
   "providers",
   "provider-http",

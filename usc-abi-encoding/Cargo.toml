@@ -4,6 +4,7 @@ license = { workspace = true }
 name = "usc-abi-encoding"
 publish = true
 version = "0.6.0"
+rust-version = { workspace = true }
 description = "Ethereum ABI encoding library. Used for the encoding of transactions and proof submission in the Creditcoin USC network."
 
 [dependencies]
