@@ -22,7 +22,7 @@ alloy = { version = "~1.6", features = [
   "sol-types",
   "signers",
 ] }
-alloy-json-abi = { version = "1.5" }
+alloy-json-abi = { version = "~1.4" }
 tokio = { version = "1" }
 hex = { version = "0.4" }
 # Pinned to avoid issues with alloy
