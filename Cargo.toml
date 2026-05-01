@@ -1,10 +1,11 @@
 [workspace]
 members = ["usc-abi-encoding", "usc-query-builder"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 license = "Unlicense"
-edition = "2021"
+edition = "2024"
+rust-version = "1.88"
 
 [workspace.dependencies]
 alloy = { version = "0.11", features = [
