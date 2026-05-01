@@ -152,7 +152,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rustc: [local, creditcoin3-next]
+        rustc: [local, creditcoin3]
     steps:
       - uses: actions/checkout@v6
 
@@ -162,10 +162,10 @@ jobs:
           RUSTC_VERSION=$(grep channel rust-toolchain.toml | tail -n1 | tr -d " " | cut -f2 -d'"')
           echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
 
-      - name: Configure rustc version from creditcoin3-next source
-        if: matrix.rustc == 'creditcoin3-next'
+      - name: Configure rustc version from creditcoin3 source
+        if: matrix.rustc == 'creditcoin3'
         run: |
-          RUSTC_VERSION=$(curl --silent --header "Authorization: Bearer $GLUWA_BOT_TOKEN" https://raw.githubusercontent.com/gluwa/creditcoin3-next/poc_external_attestation_network/rust-toolchain.toml | grep channel | tail -n1 | tr -d " " | cut -f2 -d'"')
+          RUSTC_VERSION=$(curl --silent --header "Authorization: Bearer $GLUWA_BOT_TOKEN" https://raw.githubusercontent.com/gluwa/creditcoin3/usc-dev/rust-toolchain.toml | grep channel | tail -n1 | tr -d " " | cut -f2 -d'"')
           echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
         env:
           GLUWA_BOT_TOKEN: ${{ secrets.GLUWA_BOT_TOKEN }}
