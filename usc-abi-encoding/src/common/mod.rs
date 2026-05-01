@@ -38,11 +38,7 @@ pub fn compute_v(signature: &Signature, chain_id: Option<u64>) -> U256 {
 }
 
 pub fn compute_y_parity(signature: &Signature) -> u8 {
-    if signature.v() {
-        1
-    } else {
-        0
-    }
+    if signature.v() { 1 } else { 0 }
 }
 
 pub fn encode_blob_hashes(blob_hashes: &[FixedBytes<32>]) -> DynSolValue {

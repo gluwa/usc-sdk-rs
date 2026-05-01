@@ -5,7 +5,7 @@ use alloy::{
     dyn_abi::{DecodedEvent, DynSolType, EventExt},
     hex::FromHex,
     json_abi::JsonAbi,
-    primitives::{map::HashSet, FixedBytes},
+    primitives::{FixedBytes, map::HashSet},
     rpc::types::{Log, Transaction, TransactionReceipt},
 };
 use alloy_json_abi::Event;
@@ -18,7 +18,7 @@ use super::{
 use crate::abi::{
     models::{FieldMetadata, QueryableFields},
     query_builder_for_function::QueryBuilderForFunction,
-    utils::{make_offsets_absolute, WORD_SIZE},
+    utils::{WORD_SIZE, make_offsets_absolute},
 };
 use usc_abi_encoding::{abi::abi_encode, common::EncodingVersion};
 
@@ -200,7 +200,7 @@ impl QueryBuilder {
             let name_of_signature_bytes = match self::hex_to_4_bytes(name_or_signature.as_str()) {
                 Ok(t) => t,
                 Err(_) => {
-                    return Err(QueryBuilderError::FunctionSignatureNameProvidedIsNotValidHex)
+                    return Err(QueryBuilderError::FunctionSignatureNameProvidedIsNotValidHex);
                 }
             };
 
@@ -212,7 +212,7 @@ impl QueryBuilder {
                 None => {
                     return Err(QueryBuilderError::FailedToFindFunctionByNameOrSignature(
                         name_or_signature,
-                    ))
+                    ));
                 }
             }
         } else {
@@ -229,7 +229,7 @@ impl QueryBuilder {
                         None => {
                             return Err(QueryBuilderError::FailedToFindFunctionByNameOrSignature(
                                 name_or_signature,
-                            ))
+                            ));
                         }
                     }
                 }
@@ -293,7 +293,7 @@ impl QueryBuilder {
                 None => {
                     return Err(QueryBuilderError::FailedToGetEventDataOffsets(Box::new(
                         log,
-                    )))
+                    )));
                 }
             };
 
@@ -327,7 +327,7 @@ impl QueryBuilder {
             None => {
                 return Err(QueryBuilderError::FailedToFindEventByNameOrSignature(
                     event_name_or_signature,
-                ))
+                ));
             }
         };
 
@@ -387,7 +387,7 @@ impl QueryBuilder {
                 match FixedBytes::<32>::from_hex(event_name_or_signature.clone()) {
                     Ok(decoded_fixed_bytes) => decoded_fixed_bytes,
                     Err(_) => {
-                        return Err(QueryBuilderError::EventSignatureNameProvidedIsNotValidHex)
+                        return Err(QueryBuilderError::EventSignatureNameProvidedIsNotValidHex);
                     }
                 };
 
@@ -414,7 +414,7 @@ impl QueryBuilder {
                     None => {
                         return Err(QueryBuilderError::NoAbiFoundForContract(
                             contract_address.clone(),
-                        ))
+                        ));
                     }
                 };
 
