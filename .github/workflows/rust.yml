@@ -165,10 +165,8 @@ jobs:
       - name: Configure rustc version from creditcoin3 source
         if: matrix.rustc == 'creditcoin3'
         run: |
-          RUSTC_VERSION=$(curl --silent --header "Authorization: Bearer $GLUWA_BOT_TOKEN" https://raw.githubusercontent.com/gluwa/creditcoin3/usc-dev/rust-toolchain.toml | grep channel | tail -n1 | tr -d " " | cut -f2 -d'"')
+          RUSTC_VERSION=$(curl --silent https://raw.githubusercontent.com/gluwa/creditcoin3/usc-dev/rust-toolchain.toml | grep channel | tail -n1 | tr -d " " | cut -f2 -d'"')
           echo "RUSTC_VERSION=$RUSTC_VERSION" >> "$GITHUB_ENV"
-        env:
-          GLUWA_BOT_TOKEN: ${{ secrets.GLUWA_BOT_TOKEN }}
 
       - name: Install Rust toolchain ${{ env.RUSTC_VERSION }}
         uses: dtolnay/rust-toolchain@stable
