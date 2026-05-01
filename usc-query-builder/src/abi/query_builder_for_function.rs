@@ -66,7 +66,7 @@ impl QueryBuilderForFunction {
                 return Err(QueryBuilderError::CannotFindArgumentInFunction(
                     self.matched_function.clone(),
                     name,
-                ))
+                ));
             }
         };
 

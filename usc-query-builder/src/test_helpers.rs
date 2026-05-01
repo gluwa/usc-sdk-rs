@@ -64,7 +64,13 @@ pub fn check_results(
     result_segments: Vec<(usize, usize)>,
     abi: Vec<u8>,
 ) {
-    assert_eq!(expected_results.len(), result_segments.len(), "Number of expected results doesn't match segment count. Expected results: {}, Result segments: {}", expected_results.len(), result_segments.len());
+    assert_eq!(
+        expected_results.len(),
+        result_segments.len(),
+        "Number of expected results doesn't match segment count. Expected results: {}, Result segments: {}",
+        expected_results.len(),
+        result_segments.len()
+    );
 
     for (field_number, (expected, (offset, size))) in
         expected_results.iter().zip(result_segments).enumerate()
@@ -98,7 +104,7 @@ pub fn check_results(
             }
             ResultField::EthAddress(address) => {
                 let mut address_padded: Vec<u8> = vec![0; 12];
-                address_padded.append(&mut Vec::from(address.0 .0));
+                address_padded.append(&mut Vec::from(address.0.0));
                 address_padded
             }
             ResultField::TxValue(value) => value.to_be_bytes_vec(),

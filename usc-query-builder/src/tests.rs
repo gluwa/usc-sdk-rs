@@ -1,8 +1,8 @@
 use crate::{
     abi::{models::QueryableFields, query_builder::QueryBuilder},
     test_helpers::{
-        check_results, get_transaction_and_receipt, get_vrs, get_y_parity, ResultField,
-        TestAbiProvider,
+        ResultField, TestAbiProvider, check_results, get_transaction_and_receipt, get_vrs,
+        get_y_parity,
     },
 };
 
