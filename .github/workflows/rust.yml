@@ -21,7 +21,7 @@ jobs:
     if: github.base_ref == 'main'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version
         run: |
@@ -56,7 +56,7 @@ jobs:
   cargo-fmt:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version
         run: |
@@ -87,7 +87,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version
         run: |
@@ -107,7 +107,7 @@ jobs:
   cargo-clippy:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version
         run: |
@@ -130,7 +130,7 @@ jobs:
   cargo-machete:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version
         run: |
@@ -154,7 +154,7 @@ jobs:
       matrix:
         rustc: [local, creditcoin3]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure rustc version from local source
         if: matrix.rustc == 'local'
@@ -176,7 +176,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@v2.81.1
+        uses: taiki-e/install-action@v2.82.7
         with:
           tool: cargo-llvm-cov
 
