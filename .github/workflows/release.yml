@@ -32,7 +32,7 @@ jobs:
 
   git-tag-sanity-check:
     if: github.event_name == 'push'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       PACKAGE_NAME: ${{ steps.identify-tag.outputs.PACKAGE_NAME }}
     steps:
