@@ -21,7 +21,7 @@ fn encode_common_fields(tx: &Transaction) -> DynSolValue {
     DynSolValue::Tuple(vec![
         DynSolValue::Uint(U256::from(tx.nonce()), 64), // Nonce
         DynSolValue::Uint(U256::from(tx.gas_limit()), 64), // Gas limit
-        DynSolValue::Address(tx.from),                 // From address
+        DynSolValue::Address(tx.inner.signer()),       // From address
         DynSolValue::Bool(is_to_null),                 // Is null (true if contract creation)
         DynSolValue::Address(to),                      // To address
         DynSolValue::Uint(tx.value(), 256),            // Value
@@ -214,7 +214,7 @@ fn encode_transaction_with_receipt(
     tx: Transaction,
     rx: TransactionReceipt,
 ) -> Option<(DynSolValue, Vec<DynSolValue>)> {
-    let (type_id, chunks) = match tx.inner.clone() {
+    let (type_id, chunks) = match tx.inner.clone_inner() {
         TxEnvelope::Legacy(signed_tx) => (
             DynSolValue::Uint(U256::from(0), 8),
             encode_transaction_type_0(tx, signed_tx, rx),

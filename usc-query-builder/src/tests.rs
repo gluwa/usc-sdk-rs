@@ -27,7 +27,8 @@ async fn legacy_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .add_static_field(QueryableFields::Type)
@@ -70,7 +71,7 @@ async fn legacy_tx_queried_fields_match_expected() {
         ResultField::TxNonce(tx.nonce()),
         ResultField::TxGasPrice(tx.gas_price().expect("Legacy tx should have this")),
         ResultField::TxGasLimit(tx.gas_limit()),
-        ResultField::EthAddress(tx.from), // Caller address
+        ResultField::EthAddress(tx.inner.signer()), // Caller address
         ResultField::EthAddress(tx.to().expect("Should be to field in contract call")), // Contract address in call
         ResultField::TxValue(tx.value()),
         ResultField::TxV(v),
@@ -100,7 +101,7 @@ async fn queried_receipt_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .add_static_field(QueryableFields::RxStatus)
@@ -147,7 +148,7 @@ async fn event_builder_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     // just to keep it simple for now
     // i'll just say i care about the event index 1
@@ -214,7 +215,7 @@ async fn function_builder_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .function_builder("burn".into(), |b| {
@@ -264,7 +265,7 @@ async fn type_1_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .add_static_field(QueryableFields::TxChainId)
@@ -303,7 +304,7 @@ async fn type_2_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .add_static_field(QueryableFields::TxMaxPriorityFeePerGas)
@@ -350,7 +351,7 @@ async fn type_3_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     query_builder
         .add_static_field(QueryableFields::TxMaxPriorityFeePerGas)
@@ -388,7 +389,7 @@ async fn type_4_tx_queried_fields_match_expected() {
 
     let mut query_builder = QueryBuilder::create_from_transaction(tx.clone(), rx.clone(), ENCODING)
         .expect("creating queryable builder should work");
-    query_builder.set_abi_provider(Box::new(TestAbiProvider()));
+    query_builder.set_abi_provider(Box::new(TestAbiProvider));
 
     //query_builder
     //    .add_static_field(QueryableFields::TxAuthorizationList)
