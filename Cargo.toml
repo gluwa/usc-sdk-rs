@@ -8,7 +8,7 @@ edition = "2024"
 rust-version = "1.88"
 
 [workspace.dependencies]
-alloy = { version = "0.11", features = [
+alloy = { version = "2.2", features = [
   "node-bindings",
   "providers",
   "provider-http",
@@ -26,7 +26,7 @@ alloy-json-abi = { version = "0.8.23" }
 tokio = { version = "1" }
 hex = { version = "0.4" }
 # Pinned to avoid issues with alloy
-serde = { version = "=1.0.220" }
+serde = { version = "=1.0.229" }
 serde_json = { version = "1.0" }
 
 usc-abi-encoding = { path = "usc-abi-encoding" }
