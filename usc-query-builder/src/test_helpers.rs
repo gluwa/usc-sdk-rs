@@ -40,7 +40,7 @@ pub enum ResultField {
 pub async fn get_transaction_and_receipt(tx_hash_str: &str) -> (Transaction, TransactionReceipt) {
     // RPC.
     let rpc_url = "https://sepolia-proxy-rpc.creditcoin.network";
-    let provider = ProviderBuilder::new().on_http(rpc_url.parse().unwrap());
+    let provider = ProviderBuilder::new().connect_http(rpc_url.parse().unwrap());
 
     // which transaction.
     let tx_hash = B256::from_str(tx_hash_str).unwrap();
@@ -150,7 +150,7 @@ pub fn get_y_parity(tx: &Transaction) -> u8 {
     compute_y_parity(signature)
 }
 
-pub struct TestAbiProvider();
+pub struct TestAbiProvider;
 
 #[async_trait]
 impl AbiProvider for TestAbiProvider {
